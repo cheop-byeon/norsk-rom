@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#174d43"><title>Norsk rom — room to speak</title>
+<style>
+:root{--ink:#183f36;--muted:#64736a;--paper:#f7f6ef;--line:#dce1d6;--green:#174d43;--lime:#d8ed9f}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,sans-serif}button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #bd6b2d;outline-offset:3px}button:disabled{cursor:default;opacity:.7}header{height:90px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 6vw}.brand{font-size:25px;letter-spacing:-1px;font-weight:750}.brand span{display:inline-grid;place-items:center;margin-right:10px;background:var(--green);color:var(--lime);height:36px;width:36px;border-radius:50%;font-size:23px}.badge{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border:1px solid var(--line);border-radius:20px;padding:8px 12px}main{max-width:1240px;padding:48px 30px 110px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:20px}h1{font-family:Georgia,serif;font-size:clamp(36px,5vw,58px);font-weight:400;line-height:1.06;letter-spacing:-2px;margin:12px 0 16px}h2{font-family:Georgia,serif;font-size:30px;line-height:1.15;font-weight:400;margin:12px 0}h3{margin:0 0 12px;font-size:17px}p{line-height:1.65}.eyebrow{font-size:10px;font-weight:750;letter-spacing:1.7px;text-transform:uppercase}.muted{color:var(--muted);font-size:14px}.level{background:transparent;border:1px solid var(--line);border-radius:16px;padding:13px;color:var(--ink)}.tabs{display:flex;gap:26px;margin:28px 0;border-bottom:1px solid var(--line)}.tabs button{padding:14px 0;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--muted)}.tabs button.active{color:var(--ink);border-color:var(--green);font-weight:700}.grid{display:grid;grid-template-columns:1.3fr 1fr;gap:24px}.hero{background:var(--green);color:var(--paper);border-radius:24px;padding:30px;position:relative;overflow:hidden}.hero h2{font-size:43px;max-width:400px}.hero p{color:#d7e3d9;max-width:330px}.scene{height:150px;position:relative;margin:12px 0 22px;border-bottom:1px solid #6d8d71;background:linear-gradient(90deg,transparent 49.7%,#6d8d7133 50%,transparent 50.3%);display:flex;align-items:center;justify-content:center}.cup{height:90px;width:116px;background:var(--lime);border-radius:7px 7px 52px 52px;position:relative;transform:rotate(-7deg);box-shadow:0 20px 0 -15px #b8ce84}.cup:after{content:'';position:absolute;width:38px;height:45px;border:10px solid var(--lime);border-left:0;right:-32px;top:10px;border-radius:0 40px 40px 0}.cup:before{content:'∿ ∿';position:absolute;font-size:40px;color:#bcd39d;top:-60px;left:22px;letter-spacing:10px}.primary{border:0;border-radius:13px;background:var(--lime);color:var(--ink);padding:15px 20px;font-weight:700;min-height:48px}.dark{background:var(--green);color:white}.wide{width:100%}.card{background:#fffef9;border:1px solid var(--line);border-radius:22px;padding:24px}.row{display:flex;align-items:center;justify-content:space-between;gap:12px}.scenario{display:flex;gap:14px;width:100%;text-align:left;border:1px solid var(--line);background:#fffef9;border-radius:15px;margin-top:13px;padding:17px;color:var(--ink);align-items:center}.scenario.selected{border-color:var(--green);background:#edf2e6}.icon{font-size:24px;width:38px}.scenario small{display:block;color:var(--muted);margin-top:5px}.scenario strong{font-size:14px}.callout{margin-top:20px;background:#edeedc;border-radius:18px;padding:20px}.callout p{font-size:13px;margin-bottom:0}.chips{display:flex;gap:9px;flex-wrap:wrap}.chip{font-size:12px;border:1px solid var(--line);background:transparent;padding:8px 12px;border-radius:20px;color:var(--ink);min-height:36px}.phrase{border-bottom:1px solid var(--line);padding:15px 0;display:flex;align-items:center;justify-content:space-between;gap:10px}.phrase:last-child{border:0}.phrase small{display:block;color:var(--muted);margin-top:6px}.phrase button{border:0;border-radius:50%;width:40px;height:40px;background:#edf2e6;color:var(--green)}.conversation{min-height:250px;max-height:430px;overflow:auto;display:flex;flex-direction:column;gap:13px;padding:16px 0}.bubble{padding:15px 17px;background:#edf1e7;border-radius:17px;max-width:90%;line-height:1.6}.bubble.user{align-self:flex-end;background:var(--green);color:white}.bubble small{display:block;font-size:10px;font-weight:700;letter-spacing:1px;margin-bottom:4px}.composer{display:flex;gap:8px}.composer input{width:100%;min-width:0;border:1px solid var(--line);border-radius:12px;padding:13px;color:var(--ink);background:white}.feedback{background:#fff0db;border:1px solid #e5cb9d;border-radius:13px;padding:15px;margin:12px 0;font-size:14px}.plain{border:0;background:none;color:var(--green);padding:10px 0;text-decoration:underline}.notice{font-size:12px;color:var(--muted);line-height:1.6}.answer{display:block;text-align:left;width:100%;border:1px solid var(--line);background:white;border-radius:12px;padding:16px;margin:10px 0;color:var(--ink)}.answer.chosen{border-color:var(--green);background:#e8f1db}.reading{font-family:Georgia,serif;font-size:22px;line-height:1.8}.hidden{display:none!important}footer{position:fixed;bottom:0;background:#f7f6eff2;border-top:1px solid var(--line);padding:12px 6vw;width:100%;display:flex;justify-content:space-between;font-size:11px;color:var(--muted);backdrop-filter:blur(10px)}#toast{position:fixed;bottom:65px;left:50%;transform:translateX(-50%);background:var(--ink);color:white;padding:13px 20px;border-radius:14px;max-width:90%;z-index:10;font-size:14px}.spacer{height:15px}@media(max-width:700px){header{height:70px;padding:0 20px}.brand{font-size:22px}main{padding:28px 18px 100px}.grid{grid-template-columns:1fr}.top{align-items:flex-start}h1{font-size:40px}.hero h2{font-size:37px}.hero,.card{padding:22px}.tabs{gap:22px}.tabs button{font-size:14px}footer span:last-child{display:none}.badge{font-size:9px}.scene{height:120px}.level{padding:10px}.reading{font-size:20px}}
+
+.lesson-heading{margin-bottom:22px}.lesson-heading h2{font-size:42px;letter-spacing:-1px}.lesson-steps{display:flex;gap:8px;overflow-x:auto;margin:22px 0}.lesson-step{white-space:nowrap;flex:1;border:1px solid var(--line);background:#fffef9;border-radius:12px;padding:15px 12px;color:var(--ink);font-size:12px}.lesson-step.current{background:var(--green);color:var(--paper);border-color:var(--green)}.lesson-context{align-self:start}.clip-stack{margin:20px 0}.clip-row{padding:14px 16px;border-left:2px solid var(--line);color:var(--muted);font-size:13px}.clip-row.selected{background:#eaf0df;border-color:var(--green);color:var(--ink);font-weight:700;border-radius:0 10px 10px 0}.lesson-wave{height:115px;display:grid;place-items:center;font-size:48px;letter-spacing:7px;color:var(--green);background:#edf2e6;border-radius:17px;margin:22px 0}.lesson-question{border:0;padding:0;margin:26px 0}.lesson-question legend{font-weight:650;margin-bottom:10px}.lesson-stats{display:flex;gap:12px;margin:25px 0}.lesson-stats>div{flex:1;background:#edf2e6;border-radius:14px;padding:18px 10px;text-align:center}.lesson-stats strong{display:block;font-family:Georgia,serif;font-size:32px;font-weight:400}.lesson-stats small{display:block;font-size:11px;margin-top:6px}#lesson details{margin:18px 0;font-size:14px}#lesson summary{cursor:pointer;padding:12px 0}#lesson blockquote{border-left:3px solid var(--green);padding-left:14px;margin:15px 0;font-size:18px;line-height:1.6}#lesson .card>.primary{margin-top:22px}#lesson .card>.plain{display:block;margin-top:12px}#lesson .conversation .chip{margin-top:10px}.tabs{overflow-x:auto}.tabs button{white-space:nowrap}@media(max-width:700px){.lesson-heading h2{font-size:34px}.lesson-step{flex:0 0 auto}.lesson-context{order:-1}.lesson-context .clip-stack,.lesson-context>.eyebrow~.phrase{display:none}.lesson-context h2{font-size:24px}.lesson-context>p{margin:8px 0}.lesson-stats{gap:6px}.tabs{gap:18px}}
+</style></head><body>
+<div style="padding:16px;background:#183b33;color:white;text-align:center">This is the offline design preview. <a style="color:#d2f295" href="http://127.0.0.1:8000/app/">Open the connected app with local speech models →</a></div>
+<header><div class="brand"><span>n</span>norsk rom</div><span class="badge">Interactive demo</span></header>
+<main><div class="top"><div><div class="eyebrow">A little practice. A little closer.</div><h1>Find your words.</h1><p class="muted">Everyday Norwegian, one conversation at a time.</p></div><label class="notice">Practice level<br><select id="level" class="level" aria-label="Practice level"></select></label></div>
+<nav class="tabs" aria-label="Main navigation"><button data-tab="lesson" class="active" aria-current="page">01 &nbsp; My lesson</button><button data-tab="role">Role-play</button><button data-tab="practice">Listening studio</button><button data-tab="saved">My phrases</button></nav>
+<section id="lesson"></section>
+<section id="role" class="hidden"><div id="browse" class="grid"><article class="hero"><div id="place" class="eyebrow"></div><div class="scene" aria-hidden="true"><div class="cup"></div></div><h2 id="scene-title"></h2><p id="goal"></p><button id="start" class="primary wide">Step into the conversation &nbsp; ↗</button><p class="notice">Text chat · phrase support · sample feedback</p></article><div><div class="card"><div class="row"><h3>Small moments. Real confidence.</h3><span class="eyebrow">03 scenes</span></div><div id="scenarios"></div></div><div class="callout"><div class="eyebrow">A helping hand, whenever you need it</div><p>Useful expressions stay beside your conversation. Try a phrase, make a mistake, and try again.</p><p><strong>Bokmål</strong> · English explanations · All content is fictional.</p></div></div></div>
+<div id="session" class="hidden"><div class="row"><button id="back" class="plain">← All scenarios</button><span class="badge">Scripted partner</span></div><div class="grid"><article class="card"><div class="row"><div><div class="eyebrow" id="partner"></div><h2 id="chat-title"></h2></div><span aria-hidden="true">✳</span></div><p class="notice">Demo replies follow a short script with a few keyword matches. Level selection changes listening samples only in this prototype.</p><div id="messages" class="conversation" role="log" aria-live="polite"></div><div id="feedback" aria-live="polite"></div><form id="compose" class="composer"><input id="message" aria-label="Your Norwegian reply" placeholder="Skriv på norsk…" maxlength="500" autocomplete="off"><button class="primary dark" type="submit">Send</button></form><div class="spacer"></div><button id="voice" class="chip">◉ Try a simulated voice turn</button> <button id="mistake" class="chip">Try a grammar example</button><p class="notice">No microphone, speech recognition, or pronunciation assessment is connected.</p><button id="finish" class="plain">Finish & review →</button><div id="summary" class="hidden callout" aria-live="polite"></div></article><aside class="card"><div class="eyebrow">Your conversation toolkit</div><h2>A few words to lean on.</h2><p class="muted">Tap a phrase to put it in your reply. Save it with +.</p><div id="phrases"></div><div class="callout"><strong>Need a moment?</strong><p lang="nb">Kan du si det en gang til?</p><p>Could you say that one more time?</p></div></aside></div></div></section>
+<section id="practice" class="hidden"><div class="grid"><article class="card"><div class="row"><span class="eyebrow">Listen first · speak next</span><span id="exercise-level" class="badge"></span></div><h2 id="article-title"></h2><p class="notice">Original fictional script · Norwegian device voice when available</p><div class="scene" aria-hidden="true" style="font-size:48px">ııllı ııllı ııllı</div><div class="chips"><button id="listen" class="primary dark">▶ Listen to sample</button><button id="stop-listen" class="chip">Stop</button><label class="notice">Speed <select id="speed" class="level"><option value="0.8">0.8×</option><option value="1" selected>1×</option></select></label></div><p id="audio-status" role="status" class="notice">Play the audio before answering. Transcript stays hidden until you reveal it.</p><button id="reveal" class="plain">Reveal transcript · counts as help</button><p id="article" class="reading hidden" lang="nb"></p><button id="generate" class="primary dark">Next sample ↻</button><p class="notice">Two authored samples per level; no live generation or proficiency certification.</p></article><article class="card"><div class="eyebrow">Listen for meaning</div><h2 id="question"></h2><div id="options"></div><button id="check" class="primary wide" disabled>Check answer</button><div id="result" role="status"></div><div class="callout"><strong>Now say it in your own words</strong><p>Replay, pause, and repeat a sentence. Then explain what you heard aloud. Your speech is not recorded or assessed in this demo.</p></div></article></div>
+<div class="spacer"></div><article class="card"><div class="eyebrow">Your listening studio</div><h2>Turn a whole programme into small moments.</h2><p class="muted">News, drama, debate, reality shows — bring a local file you have permission to use. It stays on your device.</p><label class="notice">Choose audio or video <input id="media-file" type="file" accept="audio/*,video/*"></label><video id="local-media" controls playsinline class="hidden" style="width:100%;max-height:280px;margin-top:18px"></video><p id="media-status" class="notice" role="status">Local practice only. No upload, transcription, or generated questions.</p><div class="chips"><label class="notice">Clip length <select id="clip-length" class="level"><option value="10">10 seconds</option><option value="20" selected>20 seconds</option><option value="30">30 seconds</option><option value="60">60 seconds</option></select></label><label class="notice"><input id="loop-clip" type="checkbox"> Repeat clip</label><button id="stop-clip" class="chip">Stop clip</button></div><div id="clips" class="chips" style="margin-top:16px"></div><p class="notice">This demo creates timed playback ranges, not exported files. Production clipping should follow sentences, pauses and speaker turns.</p></article>
+<article class="card" style="margin-top:20px"><div class="eyebrow">Text → listening</div><h2>Give Norwegian text a voice.</h2><label for="custom-text" class="notice">Paste your own or permitted Norwegian text (up to 3,000 characters).</label><textarea id="custom-text" maxlength="3000" rows="4" style="width:100%;padding:15px;border:1px solid var(--line);border-radius:12px;font:inherit;margin:12px 0" placeholder="Lim inn norsk tekst her…"></textarea><button id="speak-custom" class="primary dark">Listen to this text</button><p class="notice">Device text-to-speech only; voice availability and processing depend on your browser/OS. Questions for custom text require a future AI connection.</p></article></section>
+<section id="saved" class="hidden card"><div class="eyebrow">Words worth keeping</div><h2>Your personal phrasebook.</h2><p class="muted">Saved on this device. No account required.</p><div id="saved-list"></div></section>
+</main><footer><span>norsk rom &nbsp; / &nbsp; Room to speak.</span><span>Mock data only · No audio recorded · No connected AI</span></footer><div id="toast" class="hidden" role="status"></div>
+
+<script>
+const levels = ['A1','A2','B1','B2','C1','C2'];
+const scenarios = [
+ {id:'cafe',icon:'☕',title:'A little coffee, a little conversation',short:'At the café',place:'EVERYDAY LIFE · OSLO',role:'barista',goal:'Order a drink, ask about the price, and choose where to sit.',opening:'Hei! Hva kan jeg hjelpe deg med?',phrases:[['Jeg vil gjerne ha en kaffe.','I would like a coffee.'],['Hva koster den?','How much does it cost?'],['Kan jeg få havremelk?','Can I have oat milk?'],['Jeg vil sitte her.','I would like to sit here.']], replies:['Vil du ha en liten eller en stor kaffe?','Vil du ha noe å spise til?','Skal du sitte her eller ta med?','Det blir 45 kroner. Vil du betale med kort?']},
+ {id:'train',icon:'↗',title:'Your next stop: a conversation',short:'At the station',place:'GETTING AROUND · BERGEN',role:'ticket agent',goal:'Buy a ticket, ask when the train leaves, and find your platform.',opening:'Hei! Hvor vil du reise?',phrases:[['En billett til Oslo, takk.','One ticket to Oslo, please.'],['Når går neste tog?','When does the next train leave?'],['Hvilket spor går toget fra?','Which platform does the train leave from?'],['Er det et direkte tog?','Is it a direct train?']],replies:['Vil du reise i dag eller i morgen?','Vil du ha en enkeltbillett eller tur-retur?','Toget går fra spor tre. Trenger du hjelp med noe mer?','God tur!']},
+ {id:'neighbor',icon:'⌂',title:'Make yourself at home',short:'Meet a neighbour',place:'PEOPLE & CULTURE · TRONDHEIM',role:'neighbour',goal:'Introduce yourself, talk about your neighbourhood, and make a plan.',opening:'Hei! Er du ny i bygget?',phrases:[['Jeg har nettopp flyttet hit.','I have just moved here.'],['Hyggelig å møte deg!','Nice to meet you!'],['Er det en butikk i nærheten?','Is there a shop nearby?'],['Vil du ta en kaffe en dag?','Would you like to have a coffee sometime?']],replies:['Velkommen! Hvor bodde du før?','Hva liker du å gjøre på fritiden?','Har du vært på kafeen rundt hjørnet?','Vi kan ta en kaffe der på lørdag!']}
+];
+function mockReply(scenario, text, turn) {
+ const normalized = text.trim().toLocaleLowerCase('nb-NO');
+ const correction = /jeg er gå(?=\s|[.!?,;:]|$)/.test(normalized) ? {before:'Jeg er gå',after:'Jeg går',why:'Use the present tense “går”. Norwegian does not use “am going” in this way.'} : null;
+ let reply = scenario.replies[turn % scenario.replies.length];
+ if (scenario.id === 'cafe' && /koster|pris/.test(normalized)) reply = 'En liten kaffe koster 35 kroner, og en stor koster 45 kroner.';
+ if (scenario.id === 'cafe' && /havremelk/.test(normalized)) reply = 'Ja, vi har havremelk. Vil du ha en liten eller en stor kaffe?';
+ if (scenario.id === 'train' && /når/.test(normalized)) reply = 'Neste tog går klokka ti. Vil du ha en billett?';
+ if (scenario.id === 'neighbor' && /butikk/.test(normalized)) reply = 'Ja, det er en butikk rett rundt hjørnet.';
+ return {reply,correction};
+}
+const texts = {
+ A1:['Biblioteket er åpent på søndag. Det åpner klokka tolv. Du kan lese bøker der.','En park har en ny benk. Benken er grønn. Du kan sitte der.'],
+ A2:['Biblioteket skal være åpent på søndager fra klokka tolv. Besøkende kan lese, låne bøker og bruke datamaskinene.','Det er satt opp en ny benk i parken. Benken står ved lekeplassen, slik at foreldre kan sitte mens barna leker.'],
+ B1:['Biblioteket utvider åpningstidene og holder nå åpent på søndager fra klokka tolv. Målet er å gi flere tilgang til bøker og et rolig sted å studere.','Etter ønsker fra beboerne har kommunen satt opp en benk ved lekeplassen. Flere håper at dette vil gjøre parken til en hyggeligere møteplass.'],
+ B2:['Bibliotekets nye søndagsåpning skal gjøre tilbudet mer tilgjengelig for dem som jobber i uka. Samtidig stiller enkelte spørsmål ved om utvidelsen kan gjennomføres innenfor dagens budsjett.','Kommunens nye benk ved lekeplassen er et beskjedent tiltak, men beboerne mener den kan styrke nærmiljøet. Kritikere etterlyser likevel en helhetlig plan for vedlikehold av parken.'],
+ C1:['Søndagsåpningen begrunnes med bibliotekets rolle som en inkluderende møteplass. Selv om tiltaket kan senke terskelen for deltakelse, avhenger den langsiktige verdien av om bemanningen og finansieringen følger ambisjonene.','Benken ved lekeplassen fremstår som et lite grep med mulig sosial betydning. Hvorvidt tiltaket faktisk styrker fellesskapet, avhenger imidlertid av at det inngår i en mer gjennomtenkt prioritering av offentlige rom.'],
+ C2:['At bibliotekets dører åpnes på søndager, kan leses som et løfte om at fellesskapets rom skal være tilgjengelige også utenfor arbeidsukas rytme. Men dersom løftet innfris ved å tynne ut bemanningen, risikerer tilgjengeligheten å bli mer symbolsk enn reell.','En ny benk kan vanskelig bære hele kommunens visjon om levende nærmiljøer. Likevel er det nettopp i slike tilsynelatende uanselige tiltak at avstanden mellom politiske ambisjoner og hverdagsliv tidvis blir synlig.']
+};
+function exercise(level, variant=0) {
+ if (!levels.includes(level)) throw new Error('Unknown level');
+ const v=variant%2, advanced=levels.indexOf(level)>=3;
+ const questions = v===0 ? (advanced ? ['What tension does the speaker introduce?',['Access versus resources','Books versus computers','Sunday versus Saturday'],0,'The speaker contrasts greater access with the resources needed to sustain it.'] : ['Når åpner biblioteket på søndager?',['Klokka ti','Klokka tolv','Klokka åtte'],1,'The speaker says the library opens at twelve.']) : (advanced ? ['What is the main reservation about the bench?',['It is the wrong colour','It is too far from the park','A single measure may be insufficient'],2,'The speaker questions whether a small measure alone can fulfil broader goals.'] : ['Hvor står den nye benken?',['I parken','På biblioteket','På stasjonen'],0,'The new bench is in the park.']);
+ return {title:v===0?'A new chapter for the library':'A place to pause',text:texts[level][v],question:questions[0],options:questions[1],answer:questions[2],explanation:questions[3],level,source:'Original fictional fixture · no publisher content',note:'Illustrative difficulty, not a validated CEFR assessment.'};
+}
+
+// Fixed windows are a local demo; production segmentation uses speech boundaries.
+function splitClips(duration, seconds=20) {
+ if (!Number.isFinite(duration) || duration <= 0 || !Number.isFinite(seconds) || seconds < 5) return [];
+ const clips=[];
+ for(let start=0; start<duration; start+=seconds) clips.push({start,end:Math.min(start+seconds,duration)});
+ return clips;
+}
+
+const $=id=>document.getElementById(id);
+let scene=scenarios[0],turn=0,variant=0,selected=null,currentExercise,corrections=0,saved=[],heard=false,helpUsed=false;
+try {const value=JSON.parse(localStorage.getItem('norsk-phrases')||'[]'); if(Array.isArray(value)) saved=value.filter(p=>Array.isArray(p)&&p.length===2&&p.every(x=>typeof x==='string'));}catch{}
+const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
+let toastTimer;function toast(message){$('toast').textContent=message;$('toast').classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.add('hidden'),3500);}
+function save(phrase){const index=saved.findIndex(p=>p[0]===phrase[0]);if(index>=0)saved.splice(index,1);else saved.push(phrase);try{localStorage.setItem('norsk-phrases',JSON.stringify(saved));}catch{toast('Saved for this session only; device storage is unavailable.');}renderPhrases();renderSaved();}
+for(const level of levels){const option=el('option',level);option.value=level;$('level').append(option);}$('level').value='A2';
+function pickScenario(s){scene=s;$('place').textContent=s.place;$('scene-title').textContent=s.title;$('goal').textContent=s.goal;renderScenarios();}
+function renderScenarios(){$('scenarios').replaceChildren();for(const s of scenarios){const b=el('button',undefined,'scenario'+(s.id===scene.id?' selected':''));b.setAttribute('aria-pressed',s.id===scene.id);b.append(el('span',s.icon,'icon'));const d=el('div');d.append(el('strong',s.short),el('small',s.role+' · guided conversation'));b.append(d);b.onclick=()=>pickScenario(s);$('scenarios').append(b);}}
+function phraseRow(p,removable=false){const row=el('div',undefined,'phrase');const label=el('div');const b=el('button',p[0]);b.style.cssText='width:auto;height:auto;border-radius:0;background:none;text-align:left;padding:0';b.lang='nb';b.onclick=()=>{if(removable){toast('Open a role-play to use this expression.');}else{$('message').value=p[0];$('message').focus();}};label.append(b,el('small',p[1]));const isSaved=saved.some(x=>x[0]===p[0]);const add=el('button',isSaved?'✓':'+');add.setAttribute('aria-label',(isSaved?'Remove saved phrase: ':'Save phrase: ')+p[0]);add.onclick=()=>save(p);row.append(label,add);return row;}
+function renderPhrases(){$('phrases').replaceChildren(...scene.phrases.map(p=>phraseRow(p)));}
+function renderSaved(){$('saved-list').replaceChildren(...(saved.length?saved.map(p=>phraseRow(p,true)):[el('p','Your phrasebook is empty. Save expressions with + during a role-play.','muted')]));}
+function bubble(text,who){const n=el('div',undefined,'bubble'+(who==='You'?' user':''));n.append(el('small',who),el('div',text));n.lastChild.lang='nb';$('messages').append(n);$('messages').scrollTop=$('messages').scrollHeight;}
+$('start').onclick=()=>{turn=0;corrections=0;$('browse').classList.add('hidden');$('session').classList.remove('hidden');$('summary').classList.add('hidden');$('messages').replaceChildren();$('feedback').replaceChildren();$('message').value='';$('partner').textContent='Your partner · '+scene.role;$('chat-title').textContent=scene.short;bubble(scene.opening,'Partner');renderPhrases();};
+$('back').onclick=()=>{$('session').classList.add('hidden');$('browse').classList.remove('hidden');};
+function send(text){text=text.trim();if(!text)return;$('summary').classList.add('hidden');bubble(text,'You');const data=mockReply(scene,text,turn++);bubble(data.reply,'Partner');$('feedback').replaceChildren();if(data.correction){corrections++;const c=data.correction;const f=el('div',undefined,'feedback');f.append(el('strong','Grammar example: '+c.before+' → '+c.after),el('p',c.why));$('feedback').append(f);}else{$('feedback').append(el('p','No fixture correction triggered. This demo does not evaluate other grammar or pronunciation.','notice'));}$('message').value='';}
+$('compose').onsubmit=e=>{e.preventDefault();send($('message').value);};
+$('voice').onclick=()=>{send(scene.phrases[0][0]);toast('Simulated transcript inserted. No audio was recorded.');};
+$('mistake').onclick=()=>{$('message').value='Jeg er gå på kafé.';$('message').focus();};
+$('finish').onclick=()=>{$('summary').classList.remove('hidden');$('summary').replaceChildren(el('strong','Practice recap'),el('p',`${turn} replies sent · ${corrections} sample corrections shown. Keep one useful expression and try it again tomorrow.`),el('p','Pronunciation: not assessed. No proficiency score is calculated.'));};
+function renderExercise(){stopAudio();heard=false;helpUsed=false;$('article').classList.add('hidden');$('reveal').textContent='Reveal transcript · counts as help';$('audio-status').textContent='Listen before answering. Norwegian device voice required.';currentExercise=exercise($('level').value,variant);selected=null;const e=currentExercise;$('exercise-level').textContent=e.level;$('article-title').textContent=e.title;$('article').textContent=e.text;$('question').textContent=e.question;$('result').replaceChildren();$('check').disabled=true;$('options').replaceChildren();e.options.forEach((text,i)=>{const b=el('button',text,'answer');b.setAttribute('aria-pressed','false');b.onclick=()=>{selected=i;for(const x of $('options').children){x.classList.remove('chosen');x.setAttribute('aria-pressed','false');}b.classList.add('chosen');b.setAttribute('aria-pressed','true');$('result').replaceChildren();$('check').disabled=!heard;};$('options').append(b);});}
+$('check').onclick=()=>{if(selected===null||!heard)return;const e=currentExercise;$('result').replaceChildren(el('p',(selected===e.answer?'Riktig! ':'Not quite. ')+e.explanation+(helpUsed?' Transcript help used.':''),'feedback'));};
+$('generate').onclick=()=>{variant++;renderExercise();};$('level').onchange=renderExercise;
+for(const b of document.querySelectorAll('[data-tab]'))b.onclick=()=>{document.dispatchEvent(new Event('lesson-leave'));stopAudio();$('local-media').pause();for(const n of document.querySelectorAll('[data-tab]')){n.classList.toggle('active',n===b);n.setAttribute('aria-current',n===b?'page':'false');}for(const id of ['lesson','role','practice','saved'])$(id).classList.toggle('hidden',id!==b.dataset.tab);renderSaved();};
+
+function stopAudio(){if('speechSynthesis' in window)window.speechSynthesis.cancel();}
+function speak(text,onComplete){
+ stopAudio();$('local-media').pause();
+ if(!text.trim()){toast('Add some Norwegian text first.');return;}
+ if(!('speechSynthesis' in window)){toast('Text-to-speech is unavailable in this browser. Try a local audio file.');return;}
+ const voice=window.speechSynthesis.getVoices().find(v=>/^(nb|no|nn)(-|_|$)/i.test(v.lang));
+ if(!voice){$('audio-status').textContent='No Norwegian voice is available. Enable a Norwegian system voice, or use a local audio file below.';return;}
+ const utterance=new SpeechSynthesisUtterance(text);utterance.voice=voice;utterance.lang=voice.lang;utterance.rate=Number($('speed').value);
+ utterance.onstart=()=>{$('audio-status').textContent='Playing Norwegian device speech…';};
+ utterance.onend=()=>{$('audio-status').textContent='Playback finished. Replay as often as you like.';if(onComplete)onComplete();};
+ utterance.onerror=e=>{if(e.error!=='canceled'&&e.error!=='interrupted')$('audio-status').textContent='Speech playback failed. Try again or use a local audio file.';};
+ window.speechSynthesis.speak(utterance);
+}
+$('listen').onclick=()=>speak(currentExercise.text,()=>{heard=true;$('check').disabled=selected===null;});
+$('stop-listen').onclick=()=>{stopAudio();$('audio-status').textContent='Playback stopped.';};
+$('reveal').onclick=()=>{helpUsed=true;$('article').classList.toggle('hidden');$('reveal').textContent=$('article').classList.contains('hidden')?'Reveal transcript · help used':'Hide transcript · help used';};
+$('speak-custom').onclick=()=>speak($('custom-text').value);
+let objectURL=null,activeClip=null;
+const media=$('local-media');
+function renderClips(){media.pause();activeClip=null;$('clips').replaceChildren();const clips=splitClips(media.duration,Number($('clip-length').value));clips.forEach((clip,i)=>{const b=el('button',`${i+1} · ${Math.floor(clip.start)}–${Math.ceil(clip.end)}s`,'chip');b.onclick=async()=>{stopAudio();activeClip=clip;media.currentTime=clip.start;media.playbackRate=Number($('speed').value);try{await media.play();$('media-status').textContent=`Practising clip ${i+1}: ${clip.start}–${clip.end.toFixed(1)} seconds. Listen, repeat, then retell.`;}catch{$('media-status').textContent='Playback failed. Choose a supported audio/video format.';}};$('clips').append(b);});}
+$('media-file').onchange=()=>{stopAudio();media.pause();activeClip=null;if(objectURL)URL.revokeObjectURL(objectURL);const file=$('media-file').files[0];$('clips').replaceChildren();if(!file)return;objectURL=URL.createObjectURL(file);media.src=objectURL;media.classList.remove('hidden');$('media-status').textContent='Loading local media…';};
+media.onloadedmetadata=()=>{if(!Number.isFinite(media.duration)){ $('media-status').textContent='Could not determine duration; try a different file.';return; }$('media-status').textContent='Ready. Select a clip below. No transcript or questions are generated.';renderClips();};
+media.onerror=()=>{$('media-status').textContent='Unsupported or unreadable media file. Try MP3, WAV or MP4.';};
+function clipBoundary(){if(activeClip&&media.currentTime>=activeClip.end-0.05){if($('loop-clip').checked){media.currentTime=activeClip.start;media.play().catch(()=>{});}else{media.pause();}}}
+media.ontimeupdate=clipBoundary;media.onended=()=>{if(activeClip&&$('loop-clip').checked){media.currentTime=activeClip.start;media.play().catch(()=>{});}};
+$('speed').onchange=()=>{media.playbackRate=Number($('speed').value);};$('clip-length').onchange=renderClips;$('stop-clip').onclick=()=>{media.pause();activeClip=null;};
+window.addEventListener('pagehide',()=>{stopAudio();media.pause();if(objectURL)URL.revokeObjectURL(objectURL);});
+pickScenario(scene);renderExercise();renderSaved();
+
+document.addEventListener('lesson-save-phrase',e=>{save(e.detail);});
+
+// One connected, authored lesson. Offsets are illustrative source positions, not TTS timings.
+const cafeLesson = {
+ id:'cafe-oatmilk-a2', title:'Your usual, with a little twist.', level:'A2',
+ source:'A morning in Oslo', kind:'Fictional mini-drama · authored demo',
+ clipLabel:'02 · Ordering coffee', sourceRange:'00:18–00:48 · illustrative',
+ lines:[
+  {id:'l1',speaker:'Barista',text:'Hei! Hva vil du ha?'},
+  {id:'l2',speaker:'Customer',text:'Jeg vil gjerne ha en kaffe med havremelk.'},
+  {id:'l3',speaker:'Barista',text:'Selvfølgelig. Skal du sitte her eller ta med?'},
+  {id:'l4',speaker:'Customer',text:'Jeg vil gjerne ta den med. Hva koster den?'},
+  {id:'l5',speaker:'Barista',text:'Det blir førtifem kroner.'},
+  {id:'l6',speaker:'Customer',text:'Fint, jeg betaler med kort.'}
+ ],
+ questions:[
+  {id:'q1',prompt:'How will the customer have the coffee?',options:['At a table in the café','To take away','The customer does not say'],answer:1,evidence:['l3','l4'],explanation:'“Ta den med” means to take it away. The barista offers a choice and the customer chooses takeaway.'},
+  {id:'q2',prompt:'How much does the coffee cost?',options:['35 kroner','54 kroner','45 kroner'],answer:2,evidence:['l5'],explanation:'“Førtifem” is forty-five. Listen to the order of the number parts.'}
+ ],
+ phrases:[
+  {id:'p1',text:'Jeg vil gjerne ha en kaffe med havremelk.',meaning:'I would like a coffee with oat milk.',line:'l2',tip:'Keep “Jeg vil gjerne ha …” and swap the drink.',short:'Order with oat milk'},
+  {id:'p2',text:'Jeg vil gjerne ta den med.',meaning:'I would like to take it away.',line:'l4',tip:'“Ta med” is useful whenever you order takeaway.',short:'Choose takeaway'}
+ ],
+ opening:'Hei! Hva kan jeg hjelpe deg med?',
+ sampleError:'Jeg vil gjerne har en kaffe med havremelk.',
+ correction:{before:'Jeg vil gjerne har',after:'Jeg vil gjerne ha',why:'After the modal verb “vil”, use the infinitive “ha”, not the present-tense “har”.'},
+};
+function newLessonState(){return {step:0,answers:[null,null],checked:false,transcriptHelp:false,demoAudio:false,played:false,practised:[],messages:[],feedback:null,draft:'',used:[]};}
+function lessonScore(s){return cafeLesson.questions.reduce((n,q,i)=>n+(s.answers[i]===q.answer?1:0),0);}
+function evidenceText(q){return cafeLesson.lines.filter(l=>q.evidence.includes(l.id)).map(l=>l.text).join(' ');}
+function lessonTurn(text){
+ const t=text.trim().toLocaleLowerCase('nb-NO');
+ const correction=/\bvil gjerne har\b/.test(t)?cafeLesson.correction:null;
+ const used=[];
+ if(/vil gjerne (ha|har).*kaffe.*havremelk/.test(t)&&!correction)used.push('p1');
+ if(/ta (den )?med/.test(t))used.push('p2');
+ let reply='Vil du ha en kaffe, eller vil du ha noe annet?';
+ if(/havremelk|kaffe/.test(t))reply='Selvfølgelig! Skal du sitte her eller ta med?';
+ if(/ta (den )?med/.test(t))reply='Det blir førtifem kroner. Vil du betale med kort?';
+ if(/koster|pris/.test(t))reply='Kaffen koster førtifem kroner.';
+ if(/kort/.test(t))reply='Takk skal du ha! Kaffen kommer snart.';
+ return {reply,correction,used};
+}
+function submitLessonTurn(s,text){
+ if(!text.trim())return s;
+ const result=lessonTurn(text);
+ return {...s,draft:'',feedback:result.correction,messages:[...s.messages,{who:'You',text:text.trim()},{who:'Barista',text:result.reply}],used:[...new Set([...s.used,...result.used])]};
+}
+
+const lessonRoot=document.getElementById('lesson');
+let lessonState=newLessonState(),lessonSpeechId=0,lessonUtterance=null;
+const lessonSteps=['Listen','Answer','Review','Practise','Role-play','Recap'];
+const L=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
+function LB(text,fn,cls='chip',disabled=false){const b=L('button',text,cls);b.type='button';b.onclick=fn;b.disabled=disabled;return b;}
+function cancelLessonSpeech(){lessonSpeechId++;if('speechSynthesis'in window)window.speechSynthesis.cancel();lessonUtterance=null;}
+function lessonSpeak(text,finished){
+ cancelLessonSpeech();const token=lessonSpeechId;
+ document.getElementById('local-media').pause();
+ const status=lessonRoot.querySelector('[data-lesson-audio]');
+ function sayStatus(t){if(status&&token===lessonSpeechId)status.textContent=t;}
+ if(!('speechSynthesis'in window)){sayStatus('Audio unavailable. Use “Continue without audio” to explore this mock lesson.');return;}
+ const voices=window.speechSynthesis.getVoices();
+ const voice=voices.find(v=>/^(nb|no|nn)(-|_|$)/i.test(v.lang));
+ if(!voice){sayStatus('No Norwegian voice available yet. Enable a Norwegian system voice, retry, or continue without audio.');return;}
+ lessonUtterance=new SpeechSynthesisUtterance(text);lessonUtterance.voice=voice;lessonUtterance.lang=voice.lang;
+ lessonUtterance.rate=Number(document.getElementById('lesson-speed')?.value||1);
+ lessonUtterance.onstart=()=>sayStatus('Playing Norwegian device speech…');
+ lessonUtterance.onend=()=>{if(token!==lessonSpeechId)return;sayStatus('Playback complete. Replay whenever you need.');if(finished)finished();};
+ lessonUtterance.onerror=e=>{if(e.error!=='canceled'&&e.error!=='interrupted')sayStatus('Playback failed. You can continue in mock mode.');};
+ window.speechSynthesis.speak(lessonUtterance);
+}
+function goLesson(step){cancelLessonSpeech();lessonState.step=step;renderLesson();lessonRoot.querySelector('h2')?.focus({preventScroll:true});}
+function lessonTranscript(container){for(const line of cafeLesson.lines){const row=L('p');row.append(L('strong',line.speaker+' · '),L('span',line.text));row.lastChild.lang='nb';container.append(row);}}
+function lessonAudioBar(parent){const controls=L('div',undefined,'chips');controls.append(LB('▶ Replay lesson clip',()=>lessonSpeak(cafeLesson.lines.map(l=>l.text).join(' '),()=>{lessonState.played=true;})),LB('Stop',()=>{cancelLessonSpeech();const status=lessonRoot.querySelector('[data-lesson-audio]');if(status)status.textContent='Playback stopped.';}));const label=L('label','Speed ','notice'),speed=L('select');speed.id='lesson-speed';speed.setAttribute('aria-label','Lesson playback speed');for(const rate of ['1','0.8']){const o=L('option',rate+'×');o.value=rate;speed.append(o);}label.append(speed);controls.append(label);const status=L('p','Device voice when available · no original media recording.','notice');status.dataset.lessonAudio='';parent.append(controls,status);}
+function phraseSaveButton(p){let stored=[];try{stored=JSON.parse(localStorage.getItem('norsk-phrases')||'[]');if(!Array.isArray(stored))stored=[];}catch{}const exists=stored.some(x=>Array.isArray(x)&&x[0]===p.text);return LB(exists?'✓ Saved':'＋ Save phrase',()=>{document.dispatchEvent(new CustomEvent('lesson-save-phrase',{detail:[p.text,p.meaning]}));renderLesson();});}
+function renderLesson(){
+ lessonRoot.replaceChildren();
+ const head=L('div',undefined,'lesson-heading');head.append(L('div','ONE CLIP. YOUR NEXT CONVERSATION.','eyebrow'),L('h2',cafeLesson.title));head.querySelector('h2').tabIndex=-1;head.append(L('p','Hear it in a scene. Make sense of it. Make it your own.','muted'));
+ const badge=L('span','A2 · connected mock lesson','badge');head.append(badge);lessonRoot.append(head);
+ const progress=L('nav',undefined,'lesson-steps');progress.setAttribute('aria-label','Lesson progress');lessonSteps.forEach((name,i)=>{const b=LB(`${String(i+1).padStart(2,'0')}  ${name}`,()=>goLesson(i),'lesson-step'+(i===lessonState.step?' current':''),i>lessonState.step);if(i===lessonState.step)b.setAttribute('aria-current','step');progress.append(b);});lessonRoot.append(progress);
+ const grid=L('div',undefined,'grid'),main=L('article',undefined,'card'),aside=L('aside',undefined,'card lesson-context');
+ aside.append(L('div','YOUR SOURCE · SAME THROUGHOUT','eyebrow'),L('h2',cafeLesson.source),L('p',cafeLesson.kind,'notice'));
+ const segments=L('div',undefined,'clip-stack');['01 · Arriving','02 · Ordering coffee','03 · Saying goodbye'].forEach((x,i)=>segments.append(L('div',x,'clip-row'+(i===1?' selected':''))));aside.append(segments,L('p','Selected clip: '+cafeLesson.sourceRange,'notice'),L('p','The surrounding clips are context placeholders. This lesson uses only “Ordering coffee”.','notice'));
+ lessonAudioBar(aside);
+ aside.append(L('div','TAKE THESE INTO YOUR CONVERSATION','eyebrow'));
+ for(const p of cafeLesson.phrases){const row=L('div',undefined,'phrase');row.append(L('span',p.short),L('span',lessonState.used.includes(p.id)?'✓ Used':lessonState.practised.includes(p.id)?'✓ Practised':'○'));aside.append(row);}
+ aside.append(L('p','One authored A2 lesson. The level selector applies to the separate listening studio. No AI or microphone is connected.','notice'));
+ grid.append(main,aside);lessonRoot.append(grid);
+ const s=lessonState;
+ if(s.step===0){
+  main.append(L('div','01 / LISTEN · START WITH YOUR EARS','eyebrow'),L('h2','A coffee to go.'),L('p','A customer is ordering coffee. Listen for where they will drink it and how much it costs.'));
+  main.append(L('div','ııllı ııllı ııllı','lesson-wave'));
+  main.append(LB('▶ Listen to the conversation',()=>lessonSpeak(cafeLesson.lines.map(l=>l.text).join(' '),()=>{s.played=true;renderLesson();}),'primary dark wide'));
+  main.append(L('p',s.played?'✓ You played the sample. Ready for two questions?':'Transcript hidden. Replay as many times as you need.','notice'));
+  const transcript=L('details');transcript.append(L('summary','Need help? Show the transcript'));const lines=L('div');lessonTranscript(lines);transcript.append(lines);transcript.ontoggle=()=>{if(transcript.open)s.transcriptHelp=true;};main.append(transcript);
+  main.append(LB('Continue to questions →',()=>goLesson(1),'primary wide',!s.played));
+  main.append(LB('Continue without audio · mock walkthrough',()=>{s.demoAudio=true;goLesson(1);},'plain'));
+ }else if(s.step===1){
+  main.append(L('div','02 / UNDERSTAND','eyebrow'),L('h2','What did you hear?'),L('p','Two questions from the same café clip. You can replay it on the right.','muted'));
+  cafeLesson.questions.forEach((q,i)=>{const box=L('fieldset',undefined,'lesson-question');box.append(L('legend',`${i+1}. ${q.prompt}`));q.options.forEach((o,j)=>{const b=LB(o,()=>{s.answers[i]=j;renderLesson();},'answer'+(s.answers[i]===j?' chosen':''));b.setAttribute('aria-pressed',s.answers[i]===j);box.append(b);});main.append(box);});
+  main.append(LB('Check & hear the evidence →',()=>{s.checked=true;goLesson(2);},'primary dark wide',s.answers.some(x=>x===null)));
+ }else if(s.step===2){
+  main.append(L('div','03 / REVIEW WITH THE CLIP','eyebrow'),L('h2',`${lessonScore(s)} of 2 answers correct`),L('p',(s.demoAudio?'Mock walkthrough without required audio. ':s.transcriptHelp?'Transcript-assisted practice. ':'Practice result. ')+'This is not a proficiency score.','notice'));
+  cafeLesson.questions.forEach((q,i)=>{const box=L('div',undefined,'callout');box.append(L('strong',s.answers[i]===q.answer?'✓ '+q.prompt:'↻ '+q.prompt),L('p','Your answer: '+q.options[s.answers[i]]),L('p','Correct answer: '+q.options[q.answer]));const quote=L('blockquote',evidenceText(q));quote.lang='nb';box.append(quote,L('p',q.explanation),LB('▶ Replay supporting lines',()=>lessonSpeak(evidenceText(q))));main.append(box);});
+  main.append(LB('Practise the expressions →',()=>goLesson(3),'primary dark wide'));
+ }else if(s.step===3){
+  main.append(L('div','04 / MAKE THE WORDS YOURS','eyebrow'),L('h2','Two expressions. Lots of possibilities.'),L('p','Listen, say it aloud, and try swapping one word. Mark your own practice; no recording or pronunciation scoring.','muted'));
+  cafeLesson.phrases.forEach(p=>{const box=L('div',undefined,'callout');const phrase=L('h3',p.text);phrase.lang='nb';box.append(phrase,L('p',p.meaning),L('p',p.tip));const buttons=L('div',undefined,'chips');buttons.append(LB('▶ Hear expression',()=>lessonSpeak(p.text)),LB(s.practised.includes(p.id)?'✓ I practised this':'I said it aloud',()=>{s.practised=s.practised.includes(p.id)?s.practised.filter(id=>id!==p.id):[...s.practised,p.id];renderLesson();}),phraseSaveButton(p));box.append(buttons);main.append(box);});
+  main.append(LB('Use them in a role-play →',()=>{if(!s.messages.length)s.messages=[{who:'Barista',text:cafeLesson.opening}];goLesson(4);},'primary dark wide'));
+ }else if(s.step===4){
+  main.append(L('div','05 / YOUR TURN AT THE COUNTER','eyebrow'),L('h2','Now you’re the customer.'),L('p','Order coffee with oat milk, then ask to take it away. Use the two expressions you just heard.','muted'));
+  const tray=L('div',undefined,'chips');for(const p of cafeLesson.phrases)tray.append(LB(p.short,()=>{s.draft=p.text;renderLesson();document.getElementById('lesson-draft').focus();}));main.append(tray);
+  const log=L('div',undefined,'conversation');log.setAttribute('role','log');log.setAttribute('aria-label','Café role-play conversation');for(const m of s.messages){const b=L('div',undefined,'bubble'+(m.who==='You'?' user':''));b.append(L('small',m.who),L('div',m.text));if(m.who==='Barista')b.append(LB('▶ Hear reply',()=>lessonSpeak(m.text)));log.append(b);}main.append(log);
+  if(s.feedback){const f=L('div',undefined,'feedback');f.setAttribute('role','status');f.append(L('strong',s.feedback.before+' → '+s.feedback.after),L('p',s.feedback.why),LB('Prepare corrected retry',()=>{s.draft=cafeLesson.phrases[0].text;renderLesson();}));main.append(f);}
+  const form=L('form',undefined,'composer'),input=L('input');input.id='lesson-draft';input.value=s.draft;input.placeholder='Confirm your mock transcript, or type…';input.maxLength=500;input.setAttribute('aria-label','Your reply or simulated transcript');input.oninput=()=>{s.draft=input.value;};const send=LB('Send',()=>{} ,'primary dark');send.type='submit';form.append(input,send);form.onsubmit=e=>{e.preventDefault();lessonState=submitLessonTurn(s,input.value);renderLesson();};main.append(form);
+  main.append(LB('◉ Insert simulated spoken answer',()=>{s.draft=s.used.includes('p1')?cafeLesson.phrases[1].text:cafeLesson.sampleError;renderLesson();},'plain'));
+  main.append(L('p','Simulated voice inserts an editable example. Confirm it before sending. Replies are scripted; the grammar example is predefined. Phrase checks use text matching, not speech assessment.','notice'));
+  main.append(LB('Finish & see my recap →',()=>goLesson(5),'primary wide',!s.messages.some(m=>m.who==='You')));
+ }else{
+  main.append(L('div','06 / FROM HEARING TO USING','eyebrow'),L('h2','One clip, one conversation.'),L('p','Here is what you did with “Ordering coffee”.','muted'));
+  const stats=L('div',undefined,'lesson-stats');for(const [n,label] of [[lessonScore(s)+'/2','quiz answers'],[s.practised.length+'/2','marked practised'],[s.used.length+'/2','expressions matched']]){const box=L('div');box.append(L('strong',n),L('small',label));stats.append(box);}main.append(stats);
+  main.append(L('p',s.demoAudio?'Audio was skipped for this mock walkthrough.':s.transcriptHelp?'You used transcript help.':'No transcript help recorded.','notice'));
+  const missing=cafeLesson.phrases.filter(p=>!s.used.includes(p.id));main.append(L('h3',missing.length?'Your next small step':'Try a new version'));
+  main.append(L('p',missing.length?'Practise “'+missing[0].text+'” once more, then use it in the café role-play.':'Repeat the role-play and order tea instead of coffee. Keep the same sentence patterns.'));
+  for(const p of cafeLesson.phrases){const box=L('div',undefined,'phrase');box.append(L('span',p.text),phraseSaveButton(p));main.append(box);}
+  main.append(L('p',`${s.messages.filter(m=>m.who==='You').length} replies sent. Pronunciation not assessed. Practice marks are self-reported; phrase matches are literal demo checks.`,'notice'));
+  main.append(LB('Try the role-play again',()=>{s.messages=[{who:'Barista',text:cafeLesson.opening}];s.used=[];s.feedback=null;s.draft='';goLesson(4);},'primary dark wide'),LB('Restart the whole lesson',()=>{lessonState=newLessonState();goLesson(0);},'plain'));
+ }
+ if(s.step>0)main.append(LB('← Previous step',()=>goLesson(s.step-1),'plain'));
+}
+document.addEventListener('lesson-leave',cancelLessonSpeech);
+window.addEventListener('pagehide',cancelLessonSpeech);
+renderLesson();
+
+</script></body></html>

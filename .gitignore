@@ -1,0 +1,17 @@
+# Local credentials and runtime state
+backend/.local-config.json
+backend/.env
+backend/.data/
+backend/.venv/
+backend/venv/
+backend/*.ses
+
+# Build and test caches
+node_modules/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+
+# Generated archives
+*.zip

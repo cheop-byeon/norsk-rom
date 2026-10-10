@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "norsk-rom-backend"
+version = "0.2.0"
+description = "Connected Norwegian listening and role-play lesson API"
+requires-python = ">=3.11"
+dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "sqlalchemy>=2,<3", "psycopg[binary]>=3,<4", "httpx>=0.27,<1"]
+
+[project.optional-dependencies]
+hosted = ["gradio_client==1.13.3", "huggingface-hub>=0.19,<1", "av>=14,<20", "numpy>=1.26,<3"]
+live = ["torch>=2.6,<3", "transformers>=4.57,<5", "av>=14,<20", "scipy>=1.14,<2", "piper-tts>=1.3,<2"]
+test = ["pytest>=8,<10", "httpx>=0.27,<1"]
+
+[tool.setuptools.package-data]
+norsk_api = ["cafe_lesson.json"]
+
+[tool.setuptools.packages.find]
+include = ["norsk_api*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
