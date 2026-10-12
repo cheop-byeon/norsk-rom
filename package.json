@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test model.test.js lesson-model.test.js api-client.test.js",
+    "test": "node --test model.test.js lesson-model.test.js api-client.test.js reader.test.js",
     "start": "python3 -m http.server 8080",
     "build": "node build-preview.js"
   }

@@ -124,6 +124,8 @@ Six model/clip-range tests pass. Browser JavaScript syntax checking passes. Brow
 
 Ten logic tests pass. A lightweight DOM test harness also exercised the six-step mock flow, gating, evidence, grammar retry, expression reuse, recap and restart. This is logic verification, not a real-browser rendering or audio test. Browser rendering and native execution remain unverified.
 
+The connected lesson transcript is split into sentences. Learners can replay one sentence with the configured TTS voice and tap individual words for a hint. Hints use the lesson's generated expression meanings first, then a small bundled starter glossary; unsupported words are identified as having no hint. Sentence highlighting follows the selected sentence, not precise word timing in the original recording.
+
 ## Backend foundation (3 October 2026)
 
 A runnable FastAPI service now lives in `backend/`. See `backend/README.md` for setup, token authorization, API contracts and the live demonstration script. It provides durable sessions, quiz review, scripted role-play, recaps, private phrasebooks and a durable demo-job worker. Ten API tests pass, and a live HTTP walkthrough was completed. Real speech/media providers and Supabase Auth are not connected. The browser preview still runs independently of the backend.

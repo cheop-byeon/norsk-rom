@@ -1,10 +1,11 @@
 import {NorskClient} from './api-client.js';
+import {splitSentences,wordMeaning} from './reader.js';
 const $=id=>document.getElementById(id);
 const E=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 let rememberLogin=localStorage.getItem('norsk.rememberLogin')==='true';
 let token=(rememberLogin&&localStorage.getItem('norsk.rememberToken'))||sessionStorage.getItem('norsk.token')||'';
 const api=new NorskClient({token});
-let capabilities=null,lesson=null,script=[],saved=[],history=[],stage=0,busy=false,error='',draft='',inputMode='typed',answers={},played=false,tab='lesson',playbackText='',catalogue=[],studioText='',studioLevel='A2',studioKind='text',studioFile=null,studioURL=null,studioStart=0,studioEnd=20,studioRequest=null,studioSourceURL='',studioImportSource='file',studioYoutubeId='',studioYoutubeStart=0,studioYoutubeEnd=20,studioLongClips=[],studioLongClipIndex=-1,pronunciationTarget='',pronunciationFeedback=null;
+let capabilities=null,lesson=null,script=[],saved=[],history=[],stage=0,busy=false,error='',draft='',inputMode='typed',answers={},played=false,tab='lesson',playbackText='',catalogue=[],studioText='',studioLevel='A2',studioKind='text',studioFile=null,studioURL=null,studioStart=0,studioEnd=20,studioRequest=null,studioSourceURL='',studioImportSource='file',studioYoutubeId='',studioYoutubeStart=0,studioYoutubeEnd=20,studioLongClips=[],studioLongClipIndex=-1,pronunciationTarget='',pronunciationFeedback=null,activeReaderSentence='';
 let speechVoice=localStorage.getItem('norsk.voice')||'female',speechPace=localStorage.getItem('norsk.pace')||'slow';
 if(!['female','male'].includes(speechVoice))speechVoice='female';
 if(!['slow','normal','fast'].includes(speechPace))speechPace='slow';
@@ -36,7 +37,7 @@ async function connect(){
 }
 async function loadLesson(id){lesson=await api.request('/lessons/'+id);const data=await api.request('/lessons/'+id+'/script');script=data.lines;playbackText=data.playback_text;}
 async function advance(action,payload={},next){await api.mutate(action,payload);syncStage();if(next!==undefined)stage=next;}
-async function play(text,wholeClip=false){
+async function play(text,wholeClip=false,onEnd=null){
  if(speechWaiting){$('operation').textContent='Speech is already being generated. Please wait.';return;}
  speechWaiting=true;
  stopAudio();const generation=audioGeneration;$('operation').textContent='Generating Norwegian audio · '+capabilities.tts+' · please wait…';
@@ -44,7 +45,7 @@ async function play(text,wholeClip=false){
  try{
   const blob=await api.request('/speech/synthesize',{method:'POST',body:{text,voice:speechVoice,pace:speechPace},timeoutMs:620000});clearInterval(waiting);if(generation!==audioGeneration)return;
   audioURL=URL.createObjectURL(blob);audio=new Audio(audioURL);audio.playbackRate=Number($('speed')?.value||1);
-  audio.onended=()=>{if(wholeClip)played=true;$('operation').textContent='Playback finished.';render();};
+  audio.onended=()=>{if(wholeClip)played=true;$('operation').textContent='Playback finished.';if(onEnd)onEnd();else render();};
   await audio.play();$('operation').textContent='Playing · '+capabilities.tts;
  }catch(e){if(generation===audioGeneration){error=e.message;$('operation').textContent='';render();}}
  finally{clearInterval(waiting);speechWaiting=false;}
@@ -237,6 +238,30 @@ function renderStudio(root){
   card.append(E('p','Your reviewed text and lesson are saved to your account. Source audio is not retained by the backend. Please review generated questions and expressions.','notice'));
  }
 }
+function renderTranscriptReader(parent){
+ const reader=E('div',undefined,'transcript-reader'),detail=E('aside',undefined,'word-meaning');detail.setAttribute('aria-live','polite');
+ script.forEach(line=>{
+  const sentences=splitSentences(line.text);
+  sentences.forEach((sentence,index)=>{
+   const id=`${line.id}:${index}`,row=E('article',undefined,'reader-sentence'+(activeReaderSentence===id?' active':''));
+   const head=E('div',undefined,'reader-sentence-head');head.append(E('span',`${line.speaker} · ${index+1}/${sentences.length}`,'reader-speaker'));
+   const hear=B(activeReaderSentence===id?'▶ Hear again':'▶ Hear sentence',()=>{activeReaderSentence=id;render();play(sentence,false,()=>{activeReaderSentence='';render();});},'reader-hear');hear.setAttribute('aria-pressed',activeReaderSentence===id);head.append(hear);row.append(head);
+   const words=E('p',undefined,'reader-words');words.lang='nb';let cursor=0;
+   const pattern=/[\p{L}\p{M}]+(?:[’'-][\p{L}\p{M}]+)*/gu;
+   for(const match of sentence.matchAll(pattern)){
+    words.append(document.createTextNode(sentence.slice(cursor,match.index)));
+    const token=E('button',match[0],'reader-word');token.type='button';token.setAttribute('aria-label',`Show a meaning hint for ${match[0]}`);
+    token.onclick=()=>{const hint=wordMeaning(match[0],lesson.phrases||[]);detail.replaceChildren();detail.append(E('strong',match[0]));
+     if(hint){detail.append(E('p',hint.meaning));detail.append(E('small',hint.phrase?`From “${hint.phrase}” in this lesson.`:'Starter glossary · check the meaning in this sentence.'));}
+     else detail.append(E('p','No meaning hint for this word yet. Try a common word or an expression from this lesson.'));
+    };words.append(token);cursor=match.index+match[0].length;
+   }
+   words.append(document.createTextNode(sentence.slice(cursor)));row.append(words);reader.append(row);
+  });
+ });
+ reader.append(detail);parent.append(reader);
+}
+
 function render(){
  providerStatus();$('error').replaceChildren();if(error){$('error').append(E('p',error,'error'));}
  if(api.pending){const retry=E('button','Retry pending action','primary');retry.disabled=busy;retry.onclick=()=>run(async()=>{await api.retry();await api.refresh();syncStage();},'Retrying…');$('error').append(retry,E('p','The same request id will be reused to prevent duplicate submissions.','notice'));}
@@ -263,7 +288,7 @@ function render(){
   if(lesson.mode==='generated'&&studioYoutubeId){main.append(E('p','Play the selected segment in the YouTube player, then answer two questions. The app uses your confirmed transcript for the exercises.'),B('▶ Go to YouTube player',()=>$('youtube-source-player')?.scrollIntoView({behavior:'smooth',block:'center'}),'primary dark'),B('Hear transcript (TTS)',()=>play(playbackText,false)));}
   else main.append(E('p',lesson.mode==='generated'?'Listen to your confirmed source, then answer two questions.':'Is the coffee for here or takeaway? How much does it cost?'),B('▶ Listen',()=>play(playbackText,true),'primary dark'));
   if(lesson.mode==='generated'&&studioYoutubeId)main.append(B(played?'✓ Marked as listened':'I listened to the YouTube segment',()=>{played=true;render();}));
-  main.append(B('Show transcript',()=>run(async()=>{if(!s.transcript_help&&!s.completed)await api.mutate('transcript-help');const lines=$('transcript-lines');lines?.classList.remove('hidden');})));const lines=E('div',undefined,s.transcript_help?'':'hidden');lines.id='transcript-lines';for(const l of script)lines.append(E('p',`${l.speaker}: ${l.text}`));main.append(lines);
+  main.append(B('Show transcript',()=>run(async()=>{if(!s.transcript_help&&!s.completed)await api.mutate('transcript-help');const lines=$('transcript-lines');lines?.classList.remove('hidden');})));main.append(E('p','Tap “Hear sentence” for a replay, or tap an underlined word for a meaning hint. Sentence replay uses generated Norwegian speech.','notice'));const lines=E('div',undefined,s.transcript_help?'':'hidden');lines.id='transcript-lines';renderTranscriptReader(lines);main.append(lines);
   main.append(B('Continue to questions →',()=>run(async()=>{if(s.step==='listen')await advance('listening',{mode:played?'played_self_reported':'mock_skip'});else stage=1;}),'primary wide'));
   main.append(E('p',lesson.mode==='generated'&&studioYoutubeId?(played?'You marked the YouTube segment as listened; playback is not verified.':'Listen to the YouTube segment or continue without it.'):(played?'Audio played.':'You may continue without listening; the recap will record that audio was skipped.'),'notice'));
  }else if(stage===1){
