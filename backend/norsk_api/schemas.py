@@ -77,3 +77,11 @@ class GenerateLesson(Input):
     level: Literal['A1','A2','B1','B2','C1','C2'] = 'A2'
     source_kind: Literal['text','audio transcript'] = 'text'
     request_id: UUID
+
+class ImportURL(Input):
+    url: Annotated[str, StringConstraints(strip_whitespace=True, min_length=8, max_length=2048)]
+
+class YouTubeTranscriptRequest(Input):
+    video_id: Annotated[str, StringConstraints(pattern=r'^[A-Za-z0-9_-]{11}$')]
+    start: float = Field(ge=0, le=86400)
+    end: float = Field(gt=0, le=86400)

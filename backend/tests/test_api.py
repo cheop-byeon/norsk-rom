@@ -82,6 +82,38 @@ def test_authentication_and_owner_isolation(setup):
     assert c.post(f'/v1/sessions/{s["id"]}/listening',json={'request_id':str(uuid4()),'revision':0,'mode':'mock_skip'},headers={'Authorization':f'Bearer {B}'}).status_code == 404
 
 
+def test_studio_url_import_text_and_audio(setup, monkeypatch):
+    c, _, _ = setup
+    import norsk_api.main as main
+    def fake_import(url):
+        if url.endswith('.mp3'):
+            return {'kind':'media','title':'episode.mp3','media_type':'audio/mpeg','data':b'fake-audio','url':url}
+        return {'kind':'text','title':'Nyhet','text':'Dette er en norsk artikkeltekst.','url':url}
+    monkeypatch.setattr(main,'import_url',fake_import)
+    text = c.post('/v1/studio/import-url',json={'url':'https://example.org/article'}).json()
+    assert text['kind']=='text' and text['title']=='Nyhet'
+    media = c.post('/v1/studio/import-url',json={'url':'https://example.org/episode.mp3'})
+    assert media.status_code==200 and media.headers['content-type']=='audio/mpeg'
+    assert media.headers['x-norsk-rom-import-kind']=='media' and media.content==b'fake-audio'
+    assert c.post('/v1/studio/import-url',json={'url':'https://example.org/article'},headers={'Authorization':''}).status_code==401
+
+
+def test_youtube_caption_fetch_returns_only_selected_norwegian_clip(setup, monkeypatch):
+    c, _, _ = setup
+    import norsk_api.main as main
+    monkeypatch.setattr(main, 'fetch_youtube_captions', lambda video_id, start, end: {
+        'text':'Dette er en norsk setning fra klippet.','language':'no','is_generated':True,
+    })
+    result = c.post('/v1/studio/youtube-transcript', json={
+        'video_id':'S9Dove6pCc0','start':100,'end':120,
+    })
+    assert result.status_code == 200
+    assert result.json() == {'text':'Dette er en norsk setning fra klippet.','language':'no','is_generated':True}
+    assert c.post('/v1/studio/youtube-transcript',json={'video_id':'bad','start':0,'end':20}).status_code == 422
+    assert c.post('/v1/studio/youtube-transcript',json={'video_id':'S9Dove6pCc0','start':120,'end':100}).status_code == 422
+    assert c.post('/v1/studio/youtube-transcript',json={'video_id':'S9Dove6pCc0','start':0,'end':20},headers={'Authorization':''}).status_code == 401
+
+
 def test_idempotency_and_conflicting_retry(setup):
     c, _, _ = setup
     request = {'request_id':str(uuid4())}

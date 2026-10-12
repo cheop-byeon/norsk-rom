@@ -2,9 +2,9 @@
 
 ## Result
 
-The real-media path is **partly working**. The app accepted a public NRK podcast excerpt and the local NB-Whisper Tiny endpoint transcribed it in 2.7 seconds. The next step, creating reliable questions and speaking prompts, did not pass: the local `llama3.2` model produced unsupported quiz details and inaccurate expression meanings. The backend rejected the draft and saved no lesson. The hosted NB-Whisper Large demo returned HTTP 503, so this run used the local recognizer.
+The real-media path is **partly working**. The app accepted a public NRK podcast excerpt and the local NB-Whisper Tiny endpoint transcribed it in 2.7 seconds. The next step, creating reliable questions and speaking prompts, did not pass: the local `llama3.2` model produced unsupported quiz details and inaccurate expression meanings. The backend rejected that AI draft and did not save it. The hosted NB-Whisper Large demo returned HTTP 503, so this run used the local recognizer.
 
-The lesson session also does not replay the original clip after generation. It synthesizes the confirmed transcript for playback while the original media remains in Studio. That means the current session is not yet a true “listen to the source, then practise speaking about it” experience.
+To let you try the lesson flow in Norsk Rom, I added a manually curated NRK sample lesson to the local database. It is labeled as manual and based on the ASR draft; it is not presented as a successful AI generation. The original clip is replayable during the lesson when the source episode is selected in Studio in the same browser tab. The backend does not retain the media file.
 
 ## Source and run
 
@@ -14,6 +14,7 @@ The lesson session also does not replay the original clip after generation. It s
 - Speech recognition: local NB-Whisper Tiny, 2.7 seconds.
 - Hosted recognizer check: NB-Whisper Large demo returned HTTP 503.
 - Lesson generation: B1 request to the local `llama3.2` model. The draft included details that were not in the excerpt, failed to copy evidence exactly, or gave inaccurate phrase meanings. The endpoint returned HTTP 503 and did not save the draft.
+- In-app preview: a manually curated B1 sample is available in Library as “NRK sample · Norway vs Portugal.” The listening screen, questions, phrase practice and role-play are interactive. The app's original-source playback button was verified with the selected NRK episode and 18–58 second range.
 
 The local transcript broadly captured a discussion of Norway–Portugal in the Nations League, including Portugal taking an early lead and Norway having the upper hand. It also had errors in names and phrasing. Treat it as a draft for a learner to confirm, not a clean transcript.
 
@@ -35,7 +36,7 @@ For the football excerpt, an appropriate speaking scene would be “discuss the 
 - Local NB-Whisper Tiny is fast but can garble names and wording.
 - Hosted NB-Whisper Large was unavailable in this run.
 - Local lesson generation failed its evidence checks on real ASR output. It needs stronger source-grounding and a review/edit step before a lesson is saved.
-- Original audio is not carried into the generated lesson session; session playback synthesizes the transcript.
+- Original audio is available only from the source file selected in the current browser tab. Re-select it in Studio after a page reload; the backend does not store it.
 - The selected CEFR level sets the question target; it does not certify the source audio’s level.
 - Speech recognition does not assess pronunciation. Conversation grammar feedback and pronunciation scoring should be presented as separate capabilities.
 

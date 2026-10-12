@@ -6,7 +6,7 @@ A runnable FastAPI backend for the connected A2 café lesson. It persists actual
 
 **Implemented:** authenticated API, durable lesson sessions, controlled step progression, idempotency, optimistic concurrency, private phrasebooks, deletion, OpenAPI docs, and a separate durable **demo-only** lesson-preparation worker.
 
-**Not connected:** NB-Whisper, server TTS, real AI conversations, pronunciation assessment, media uploads, FFmpeg clipping, automatic question generation, Supabase Auth or Storage. The current worker prepares the existing authored fixture; it does not process real media. No fake acoustic scores are returned.
+**Current speech/media flow:** local NB-Whisper handles short clips. Optional Hosted NB-Whisper uploads selected clips to NB's public Hugging Face Space; its full-recording endpoint accepts local files up to 50 MB and 30 minutes, then returns timestamped practice clips. Install optional dependencies with `pip install -e '.[hosted]'`. The public Space is currently paused, so remote transcription is unavailable until it resumes. Speech recognition never falls back between local and hosted providers silently. Pronunciation assessment is not implemented, and the demo worker still prepares authored fixtures rather than processing media.
 
 ## Run locally
 
@@ -17,8 +17,10 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.lock.txt
 python init_dev.py
-python -m uvicorn norsk_api.main:create_app --factory --host 127.0.0.1 --port 8000
+./run_dev.sh
 ```
+
+`run_dev.sh` starts Uvicorn in development mode and watches `norsk_api/`. Python backend changes reload automatically; you do not need to stop and relaunch the server for each feature. Browser files are served directly from disk, so after HTML/CSS/JavaScript edits, refresh the page if the browser has not picked them up. Stop the server only when you are finished with this development session, or to change its environment/configuration.
 
 - API explorer: http://127.0.0.1:8000/docs
 - OpenAPI: http://127.0.0.1:8000/openapi.json
@@ -72,6 +74,7 @@ Additional routes:
 | Route | Purpose |
 |---|---|
 | `GET /v1/capabilities` | Explicit provider availability and supported levels |
+| `POST /v1/speech/pronunciation-check?target=...` | Transcribe a short phrase and compare recognized words with the target; this is a rough hint, not phonetic scoring |
 | `GET /v1/lessons/{id}/script` | Authored text for device TTS; requesting it does not imply learner transcript help |
 | `GET /v1/sessions?limit=20&offset=0` | Current learner's session history |
 | `GET /v1/sessions/{id}` | Resume session |
@@ -110,7 +113,7 @@ Supabase Auth integration should replace the local token map with verified Supab
 
 ## Frontend integration
 
-The existing browser preview remains standalone and is **not yet wired to this API**. `demo_client.py` demonstrates the complete HTTP contract; `/docs` allows interactive calls. Use the session response as the source of truth when connecting Expo or the browser:
+The browser app is wired to this API. Studio offers short-clip transcription and the optional hosted long-recording workflow; source text and generated lessons follow the API flow. `demo_client.py` demonstrates the session contract; `/docs` allows interactive calls. Use the session response as the source of truth when connecting Expo or the browser:
 
 - Hold the latest session id and revision in application state.
 - Generate one request id per user action; preserve it for network retries.
@@ -139,4 +142,4 @@ Tests cover the entire lesson, restart persistence, answer evidence, grammar ret
 - `init_dev.py`, `demo_client.py`: local setup and API walkthrough.
 - `requirements.lock.txt`: exact versions from the verified environment.
 
-Bind to loopback for development. Before public deployment, replace development auth, add migrations, rate/request-size limits and operational monitoring, and implement/test real providers. This starter does not claim production readiness.
+Bind to loopback for development. Before public deployment, replace development auth, add migrations, rate/request-size limits and operational monitoring. This starter does not claim production readiness.

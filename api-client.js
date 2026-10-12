@@ -10,7 +10,7 @@ export class NorskClient {
    const response=await this.fetcher('/v1'+path,{method,headers:{Authorization:'Bearer '+this.token,...(body&&!raw?{'Content-Type':'application/json'}:{})},body:body?(raw?body:JSON.stringify(body)):undefined,signal:controller.signal});
    if(!response.ok){let detail='Request failed';try{const data=await response.json();detail=typeof data.detail==='string'?data.detail:JSON.stringify(data.detail);}catch{}throw new ApiError(detail,response.status);}
    if(response.status===204)return null;
-   if(response.headers.get('content-type')?.includes('audio/'))return response.blob();
+   if(/^(audio|video)\//.test(response.headers.get('content-type')||''))return response.blob();
    return response.json();
   }catch(e){if(e instanceof ApiError)throw e;if(path==='/speech/synthesize')throw new ApiError('Speech generation timed out or the connection was interrupted. The remote demo may still be processing; avoid repeated clicks.');throw new ApiError('Connection interrupted. Your action is preserved; retry when the server is available.');}
   finally{clearTimeout(timeout);}

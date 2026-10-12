@@ -17,13 +17,16 @@ from .database import Base, LessonSession, SavedPhrase, MediaJob, GeneratedLesso
 from .fixtures import LESSON, LESSON_ID, PHRASES, lesson_public
 from .providers import MockConversation
 from .live import OllamaConversation, LocalSpeech, ProviderFailure
-from .remote_asr import transcribe_remote
+from .remote_asr import transcribe_remote, group_practice_clips
+from .pronunciation import compare_phrase
 from .remote_speech import MossNanoSpeech, VoxCPMSpeech
-from .schemas import CreateSession, Mutation, Listening, Answers, Practice, Turn, CreateJob, SessionView, JobView, Synthesis, GenerateLesson
+from .schemas import CreateSession, Mutation, Listening, Answers, Practice, Turn, CreateJob, SessionView, JobView, Synthesis, GenerateLesson, ImportURL, YouTubeTranscriptRequest
 from .service import Lessons, owned, view, recap
 from .jobs import enqueue, job_owned, job_view
 from .catalogue import get_lesson, public_lesson, find_phrase
 from .generate import generate_lesson
+from .imports import import_url
+from .youtube_captions import CaptionUnavailable, fetch_youtube_captions
 
 
 def create_app(settings: Settings | None = None, conversation=None):
@@ -61,7 +64,7 @@ def create_app(settings: Settings | None = None, conversation=None):
     @api.get('/capabilities')
     def capabilities(owner: User):
         return {'conversation':getattr(provider,'name','mock-cafe-v1'), **speech.capabilities(),
-                'transcription_options':['local','nb_hosted'], 'pronunciation':'not_assessed', 'media_processing':'short_clip_transcription', 'exercise_generation':settings.ollama_model if settings.conversation_mode=='ollama' else 'not_configured', 'auth':'local_bearer_keys',
+                'transcription_options':['local','nb_hosted'], 'pronunciation':'transcript_comparison_hint', 'media_processing':'short_clips_and_bounded_hosted_long_recordings', 'exercise_generation':settings.ollama_model if settings.conversation_mode=='ollama' else 'not_configured', 'auth':'local_bearer_keys',
                 'supported_levels':['A2'], 'generation_target_levels':['A1','A2','B1','B2','C1','C2'], 'persistence':'sqlalchemy', 'supabase_auth':'not_connected'}
 
 
@@ -108,6 +111,31 @@ def create_app(settings: Settings | None = None, conversation=None):
                 if not old or old.document.get('_fingerprint')!=fingerprint:raise HTTPException(409,'Conflicting generation request.')
                 doc=old.document
         return public_lesson(doc)
+
+    @api.post('/studio/import-url')
+    def studio_import_url(body: ImportURL, owner: User):
+        try:
+            result=import_url(body.url)
+        except ValueError as exc:
+            raise HTTPException(422,str(exc))
+        except Exception as exc:
+            raise HTTPException(502,'Could not import that URL. It may require a sign-in, block downloads, or be temporarily unavailable.') from exc
+        if result['kind']=='media':
+            return Response(result['data'],media_type=result['media_type'],headers={
+                'Cache-Control':'no-store','X-Norsk-Rom-Import-Kind':'media',
+                'X-Norsk-Rom-Import-Title':result['title'][:180]})
+        return {'kind':'text','title':result['title'],'text':result['text'],'url':result['url']}
+
+    @api.post('/studio/youtube-transcript')
+    def studio_youtube_transcript(body: YouTubeTranscriptRequest, owner: User):
+        if body.end <= body.start:
+            raise HTTPException(422, 'Choose an end time after the start time.')
+        try:
+            return fetch_youtube_captions(body.video_id, body.start, body.end)
+        except CaptionUnavailable as exc:
+            raise HTTPException(422, str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(503, str(exc)) from exc
 
     @api.post('/sessions', response_model=SessionView, status_code=201)
     def create_session(body: CreateSession, owner: User):
@@ -238,6 +266,35 @@ def create_app(settings: Settings | None = None, conversation=None):
             return await run_in_threadpool(transcribe_remote if provider=='nb_hosted' else speech.transcribe,bytes(data),start,end)
         except ValueError as exc:
             raise HTTPException(422,str(exc))
+
+    @api.post('/speech/pronunciation-check')
+    async def pronunciation_check(request: Request, owner: User, target: str = Query(...,min_length=1,max_length=200), provider: Literal['local','nb_hosted'] = 'local'):
+        """Offer a transcript comparison hint for a learner rehearsing a phrase."""
+        data=bytearray()
+        async for chunk in request.stream():
+            data.extend(chunk)
+            if len(data)>12*1024*1024:raise HTTPException(413,'Practice audio must be smaller than 12 MB.')
+        if not data:raise HTTPException(422,'Record the phrase before checking it.')
+        try:
+            transcribed=await run_in_threadpool(transcribe_remote if provider=='nb_hosted' else speech.transcribe,bytes(data),0,None)
+            if not isinstance(transcribed,dict):raise ValueError('Speech recognizer returned an invalid result.')
+            return compare_phrase(target,transcribed.get('text',''))
+        except ValueError as exc:raise HTTPException(422,str(exc))
+
+    @api.post('/speech/transcribe-long')
+    async def transcribe_long(request: Request, owner: User, end: float = Query(...,gt=0.25,le=1800)):
+        """Transcribe a bounded local recording with NB hosted Whisper and return practice clips."""
+        data=bytearray()
+        async for chunk in request.stream():
+            data.extend(chunk)
+            if len(data)>50*1024*1024:
+                raise HTTPException(413,'Hosted long recordings must be 50 MB or smaller.')
+        if not data:raise HTTPException(422,'Send an audio or video file in the request body.')
+        try:
+            result=await run_in_threadpool(transcribe_remote,bytes(data),0,end,timestamps=True,max_duration=1800)
+            result['clips']=group_practice_clips(result.get('segments',[]))
+            return result
+        except ValueError as exc:raise HTTPException(422,str(exc))
 
     # Explicit public asset allowlist: never expose backend files, keys or databases.
     frontend=Path(__file__).resolve().parents[2]
