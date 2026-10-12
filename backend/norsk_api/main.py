@@ -25,7 +25,7 @@ from .service import Lessons, owned, view, recap
 from .jobs import enqueue, job_owned, job_view
 from .catalogue import get_lesson, public_lesson, find_phrase
 from .generate import generate_lesson
-from .imports import import_url
+from .imports import import_url, import_podcast_feed, extract_document
 from .youtube_captions import CaptionUnavailable, fetch_youtube_captions
 
 
@@ -133,6 +133,22 @@ def create_app(settings: Settings | None = None, conversation=None):
                 'Cache-Control':'no-store','X-Norsk-Rom-Import-Kind':'media',
                 'X-Norsk-Rom-Import-Title':result['title'][:180]})
         return {'kind':'text','title':result['title'],'text':result['text'],'url':result['url']}
+
+    @api.post('/studio/podcast-feed')
+    def studio_podcast_feed(body: ImportURL, owner: User):
+        try:return import_podcast_feed(body.url)
+        except ValueError as exc:raise HTTPException(422,str(exc)) from exc
+        except Exception as exc:raise HTTPException(502,'Could not read that public podcast feed.') from exc
+
+    @api.post('/studio/import-document')
+    async def studio_import_document(request: Request, owner: User, filename: str = Query(...,min_length=1,max_length=200)):
+        data=bytearray()
+        async for chunk in request.stream():
+            data.extend(chunk)
+            if len(data)>25*1024*1024:raise HTTPException(413,'Choose a document smaller than 25 MB.')
+        try:return extract_document(bytes(data),filename)
+        except ValueError as exc:raise HTTPException(422,str(exc)) from exc
+        except RuntimeError as exc:raise HTTPException(503,str(exc)) from exc
 
     @api.post('/studio/youtube-transcript')
     def studio_youtube_transcript(body: YouTubeTranscriptRequest, owner: User):

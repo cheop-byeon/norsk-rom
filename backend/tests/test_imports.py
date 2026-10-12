@@ -1,6 +1,8 @@
+import io
+import zipfile
 import pytest
 
-from norsk_api.imports import _extract_text, _public_http_url
+from norsk_api.imports import _extract_text, _public_http_url, import_podcast_feed, extract_document
 
 
 def test_extract_article_paragraphs_and_title():
@@ -16,3 +18,51 @@ def test_reject_private_and_non_http_urls():
     for url in ('http://127.0.0.1/audio.mp3', 'http://localhost/page', 'file:///etc/passwd', 'https://user:pass@example.org'):
         with pytest.raises(ValueError, match='public http or https'):
             _public_http_url(url)
+
+
+def test_podcast_feed_reads_public_audio_enclosures_without_downloading_them(monkeypatch):
+    payload=b'''<rss version="2.0"><channel><title>Norwegian Practice</title>
+      <item><title>Episode one</title><description>Useful phrases</description><pubDate>Today</pubDate>
+      <enclosure url="https://cdn.example.org/episode.mp3" type="audio/mpeg"/></item>
+      <item><title>Video extra</title><enclosure url="https://cdn.example.org/extra.txt" type="text/plain"/></item>
+      </channel></rss>'''
+    class Response:
+        status_code=200;headers={}
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def iter_bytes(self):yield payload
+        def raise_for_status(self):pass
+    class Client:
+        def __init__(self,**kwargs):pass
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def stream(self,*args,**kwargs):return Response()
+    monkeypatch.setattr('norsk_api.imports._public_http_url',lambda url:url)
+    monkeypatch.setattr('norsk_api.imports.httpx.Client',Client)
+    result=import_podcast_feed('https://pod.example.org/feed.xml')
+    assert result['title']=='Norwegian Practice'
+    assert len(result['episodes'])==1
+    assert result['episodes'][0]['title']=='Episode one'
+    assert result['episodes'][0]['audio_url']=='https://cdn.example.org/episode.mp3'
+
+
+def test_document_import_extracts_txt_docx_and_epub_text():
+    source='Dette er en norsk setning som vi bruker til å øve på lytting og tale.'
+    assert extract_document(source.encode(),'lesson.txt')['text']==source
+    subtitles='''WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nHei, hvordan går det?\n\n2\n00:00:04,000 --> 00:00:06,000\nDet går veldig bra.\n'''
+    subtitle_text=extract_document(subtitles.encode(),'lesson.vtt')['text']
+    assert subtitle_text=='Hei, hvordan går det?\nDet går veldig bra.'
+    docx=io.BytesIO()
+    with zipfile.ZipFile(docx,'w') as archive:
+        archive.writestr('word/document.xml',f'<w:document xmlns:w="urn:w"><w:body><w:p><w:r><w:t>{source}</w:t></w:r></w:p></w:body></w:document>')
+    assert source in extract_document(docx.getvalue(),'lesson.docx')['text']
+    epub=io.BytesIO()
+    with zipfile.ZipFile(epub,'w') as archive:archive.writestr('OEBPS/chapter.xhtml',f'<html><body><p>{source}</p></body></html>')
+    assert source in extract_document(epub.getvalue(),'lesson.epub')['text']
+
+
+def test_scanned_pdf_reports_that_ocr_is_not_available():
+    from pypdf import PdfWriter
+    pdf=io.BytesIO();writer=PdfWriter();writer.add_blank_page(width=100,height=100);writer.write(pdf)
+    with pytest.raises(ValueError,match='OCR is not enabled'):
+        extract_document(pdf.getvalue(),'scan.pdf')

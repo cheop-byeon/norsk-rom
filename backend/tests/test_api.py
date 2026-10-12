@@ -98,6 +98,18 @@ def test_studio_url_import_text_and_audio(setup, monkeypatch):
     assert c.post('/v1/studio/import-url',json={'url':'https://example.org/article'},headers={'Authorization':''}).status_code==401
 
 
+def test_studio_podcast_feed_and_document_import_routes(setup, monkeypatch):
+    c, _, _ = setup
+    import norsk_api.main as main
+    monkeypatch.setattr(main,'import_podcast_feed',lambda url:{'title':'Norskpodden','episodes':[{'title':'Episode 1','audio_url':'https://cdn.example.org/ep.mp3'}]})
+    feed=c.post('/v1/studio/podcast-feed',json={'url':'https://feeds.example.org/norsk.xml'})
+    assert feed.status_code==200 and feed.json()['title']=='Norskpodden'
+    assert c.post('/v1/studio/podcast-feed',json={'url':'https://feeds.example.org/norsk.xml'},headers={'Authorization':''}).status_code==401
+    document=c.post('/v1/studio/import-document?filename=lesson.srt',content=b'WEBVTT\n\n00:00:00 --> 00:00:01\nHei Norge!')
+    assert document.status_code==200 and document.json()['text']=='Hei Norge!'
+    assert c.post('/v1/studio/import-document?filename=lesson.srt',content=b'WEBVTT',headers={'Authorization':''}).status_code==401
+
+
 def test_youtube_caption_fetch_returns_only_selected_norwegian_clip(setup, monkeypatch):
     c, _, _ = setup
     import norsk_api.main as main

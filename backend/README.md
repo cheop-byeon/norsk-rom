@@ -74,6 +74,10 @@ Additional routes:
 | Route | Purpose |
 |---|---|
 | `GET /v1/capabilities` | Explicit provider availability and supported levels |
+| `POST /v1/studio/import-document?filename=...` | Extract editable text from TXT, Markdown, SRT/VTT, text-searchable PDF, EPUB, or DOCX (25 MB maximum, up to 4,000 characters returned) |
+| `POST /v1/studio/podcast-feed` | Read public RSS/Atom episode metadata and public audio enclosure URLs; does not fetch episode audio |
+| `POST /v1/studio/import-url` | Import a public text page or a directly accessible audio/video file (50 MB maximum) |
+| `POST /v1/studio/youtube-transcript` | Fetch available captions for a selected YouTube segment; does not download its audio/video |
 | `POST /v1/speech/pronunciation-check?target=...` | Transcribe a short phrase and compare recognized words with the target; this is a rough hint, not phonetic scoring |
 | `GET /v1/lessons/{id}/script` | Authored text for device TTS; requesting it does not imply learner transcript help |
 | `GET /v1/sessions?limit=20&offset=0` | Current learner's session history |
@@ -88,6 +92,8 @@ Additional routes:
 | `DELETE /v1/vocabulary/{id}` | Remove a saved word |
 
 The connected app's transcript reader supports per-sentence listening, click-to-save contextual words, a dictation check, and repeat-and-compare through speech recognition. Timed YouTube captions and timestamped hosted Whisper segments are stored with generated lessons and used to jump source playback when the original video/file is still open in the browser. Local Whisper exposes only chunk boundaries, so that source playback is explicitly approximate. Source media itself is not uploaded to or retained by the Norsk Rom database.
+
+The Studio accepts local microphone recordings, permitted device files, subtitle files, documents, public media URLs and podcast feeds. Scanned-image OCR is not enabled. Netflix/Prime account playback and private or DRM-protected platform streams are not captured; users can provide subtitle files they are allowed to access. Public social links are best-effort because platform APIs, authentication and page restrictions differ. A subscription or public feed does not grant redistribution rights; the app does not republish imported source media.
 
 The script endpoint intentionally exposes text for device speech. Hiding transcripts is a learning interaction, not anti-cheating security. A production frontend must call transcript-help when it reveals text to the learner.
 
