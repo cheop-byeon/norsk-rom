@@ -34,6 +34,20 @@ class SavedPhrase(Base):
     phrase_id: Mapped[str] = mapped_column(String(100), primary_key=True)
     created_at: Mapped[str] = mapped_column(String(40), default=now)
 
+class SavedWord(Base):
+    __tablename__ = 'saved_words'
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    owner: Mapped[str] = mapped_column(String(200), index=True)
+    word: Mapped[str] = mapped_column(String(100))
+    normalized_word: Mapped[str] = mapped_column(String(100))
+    meaning: Mapped[str] = mapped_column(String(300), default='')
+    source_sentence: Mapped[str] = mapped_column(String(600), default='')
+    lesson_id: Mapped[str] = mapped_column(String(100), default='')
+    status: Mapped[str] = mapped_column(String(20), default='learning')
+    created_at: Mapped[str] = mapped_column(String(40), default=now)
+    updated_at: Mapped[str] = mapped_column(String(40), default=now)
+    __table_args__ = (UniqueConstraint('owner', 'normalized_word', 'source_sentence'),)
+
 class MediaJob(Base):
     __tablename__ = 'media_jobs'
     id: Mapped[str] = mapped_column(String(36), primary_key=True)

@@ -33,16 +33,18 @@ def fetch_youtube_captions(video_id: str, start: float, end: float) -> dict:
             raise CaptionUnavailable('This video is unavailable to the caption service. You can still paste captions manually.') from exc
         raise RuntimeError('YouTube captions could not be retrieved right now. You can still paste captions manually.') from exc
 
-    parts = [
-        ' '.join(line.text.split())
-        for line in transcript
-        if line.start < end and line.start + line.duration > start and line.text.strip()
-    ]
-    text = ' '.join(parts)[:4000].strip()
+    selected = [line for line in transcript
+        if line.start < end and line.start + line.duration > start and line.text.strip()]
+    segments = [{'start':round(max(start,float(line.start)),2),
+                  'end':round(min(end,float(line.start+line.duration)),2),
+                  'text':' '.join(line.text.split()),'timestamp_quality':'caption'}
+                for line in selected if min(end,float(line.start+line.duration))>max(start,float(line.start))]
+    text = ' '.join(segment['text'] for segment in segments)[:4000].strip()
     if len(text) < 30:
         raise CaptionUnavailable('No usable Norwegian captions were found in this clip. Choose another segment or paste captions manually.')
     return {
         'text': text,
+        'segments': segments[:300],
         'language': getattr(transcript, 'language_code', 'unknown'),
         'is_generated': bool(getattr(transcript, 'is_generated', False)),
     }

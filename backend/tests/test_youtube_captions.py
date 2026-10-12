@@ -27,7 +27,9 @@ def test_fetch_filters_captions_to_selected_clip(monkeypatch):
 
     monkeypatch.setitem(sys.modules, 'youtube_transcript_api', SimpleNamespace(YouTubeTranscriptApi=FakeApi))
     result = fetch_youtube_captions('S9Dove6pCc0', 10, 13)
-    assert result == {'text':'Dette er norsk. Enda en setning her.','language':'no','is_generated':True}
+    assert result == {'text':'Dette er norsk. Enda en setning her.','language':'no','is_generated':True,
+        'segments':[{'start':10,'end':12.0,'text':'Dette er norsk.','timestamp_quality':'caption'},
+                    {'start':11,'end':13,'text':'Enda en setning her.','timestamp_quality':'caption'}]}
 
 
 @pytest.mark.parametrize(('video_id','start','end'), [

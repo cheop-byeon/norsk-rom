@@ -82,6 +82,12 @@ Additional routes:
 | `GET /v1/phrases` | Current learner's saved expressions |
 | `PUT /v1/phrases/p1` | Idempotently save a known fixture phrase |
 | `DELETE /v1/phrases/p1` | Remove saved expression |
+| `GET /v1/vocabulary?status=learning` | List this learner's contextual saved words |
+| `POST /v1/vocabulary` | Save or update a word, learner meaning, source sentence, and lesson context |
+| `PATCH /v1/vocabulary/{id}` | Change the meaning or mark a word learning/known |
+| `DELETE /v1/vocabulary/{id}` | Remove a saved word |
+
+The connected app's transcript reader supports per-sentence listening, click-to-save contextual words, a dictation check, and repeat-and-compare through speech recognition. Timed YouTube captions and timestamped hosted Whisper segments are stored with generated lessons and used to jump source playback when the original video/file is still open in the browser. Local Whisper exposes only chunk boundaries, so that source playback is explicitly approximate. Source media itself is not uploaded to or retained by the Norsk Rom database.
 
 The script endpoint intentionally exposes text for device speech. Hiding transcripts is a learning interaction, not anti-cheating security. A production frontend must call transcript-help when it reveals text to the learner.
 

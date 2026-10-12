@@ -37,6 +37,38 @@ def test_generated_lesson_is_private_idempotent_and_usable(client,monkeypatch):
     assert c.put('/v1/phrases/'+pid,headers={'Authorization':'Bearer '+OTHER}).status_code==404
 
 
+def test_vocabulary_is_private_upsertable_and_reviewable(client):
+    c, _ = client
+    sentence='Jeg vil gjerne ha en kaffe.'
+    body={'word':'gjerne','meaning':'gladly; would like to','source_sentence':sentence,'lesson_id':'cafe-oatmilk-a2'}
+    first=c.post('/v1/vocabulary',json=body);assert first.status_code==201,first.text
+    word=first.json()['word']
+    again=c.post('/v1/vocabulary',json={**body,'meaning':'I would like'});assert again.status_code==201
+    assert again.json()['word']['id']==word['id']
+    assert again.json()['word']['meaning']=='I would like'
+    assert len(c.get('/v1/vocabulary').json()['items'])==1
+    assert c.get('/v1/vocabulary',headers={'Authorization':'Bearer '+OTHER}).json()['items']==[]
+    assert c.patch('/v1/vocabulary/'+word['id'],json={'status':'known'}).json()['word']['status']=='known'
+    assert c.get('/v1/vocabulary?status=learning').json()['items']==[]
+    assert c.patch('/v1/vocabulary/'+word['id'],headers={'Authorization':'Bearer '+OTHER},json={'status':'known'}).status_code==404
+    assert c.delete('/v1/vocabulary/'+word['id']).status_code==204
+    assert c.get('/v1/vocabulary').json()['items']==[]
+
+
+def test_generated_lesson_keeps_timed_source_segments(client,monkeypatch):
+    c,_=client
+    def generate(*args):
+        doc=deepcopy(LESSON);doc['generated']=True;return doc
+    monkeypatch.setattr('norsk_api.main.generate_lesson',generate)
+    segment={'start':12.4,'end':15.1,'text':'Jeg vil gjerne ha en kaffe.','timestamp_quality':'caption'}
+    body={'text':'Dette er en norsk tekst som brukes i en test.','level':'A2','source_kind':'audio transcript','request_id':str(uuid4()),'source_segments':[segment]}
+    created=c.post('/v1/studio/lessons',json=body);assert created.status_code==201,created.text
+    script=c.get('/v1/lessons/'+created.json()['id']+'/script').json()
+    assert script['source_segments']==[segment]
+    invalid={**body,'request_id':str(uuid4()),'source_segments':[{**segment,'end':segment['start']}]}
+    assert c.post('/v1/studio/lessons',json=invalid).status_code==422
+
+
 def test_provider_errors_and_asset_allowlist(client,monkeypatch):
     c,app=client
     def fail(*args):raise ProviderFailure('Unavailable for test')

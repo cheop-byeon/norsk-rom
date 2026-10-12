@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
 
@@ -72,11 +72,35 @@ class Synthesis(Input):
     pace: Literal["slow","normal","fast"] = "slow"
     text: Annotated[str, StringConstraints(strip_whitespace=True,min_length=1,max_length=4000)]
 
+class SourceSegment(Input):
+    start: float = Field(ge=0, le=1800)
+    end: float = Field(gt=0, le=1800)
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1200)]
+    timestamp_quality: Literal['caption','hosted_asr','local_chunk','unknown'] = 'unknown'
+
+    @model_validator(mode='after')
+    def valid_range(self):
+        if self.end <= self.start:
+            raise ValueError('Source segment end must be after its start.')
+        return self
+
 class GenerateLesson(Input):
     text: Annotated[str,StringConstraints(strip_whitespace=True,min_length=30,max_length=4000)]
     level: Literal['A1','A2','B1','B2','C1','C2'] = 'A2'
     source_kind: Literal['text','audio transcript'] = 'text'
     request_id: UUID
+    source_segments: list[SourceSegment] = Field(default_factory=list, max_length=300)
+    source_id: Annotated[str, StringConstraints(max_length=100)] = ''
+
+class SaveWord(Input):
+    word: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+    meaning: Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)] = ''
+    source_sentence: Annotated[str, StringConstraints(strip_whitespace=True, max_length=600)] = ''
+    lesson_id: Annotated[str, StringConstraints(max_length=100)] = ''
+
+class UpdateWord(Input):
+    meaning: Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)] | None = None
+    status: Literal['learning','known'] | None = None
 
 class ImportURL(Input):
     url: Annotated[str, StringConstraints(strip_whitespace=True, min_length=8, max_length=2048)]

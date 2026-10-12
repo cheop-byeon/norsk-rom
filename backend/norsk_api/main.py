@@ -13,20 +13,24 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select, update, delete
 from sqlalchemy.exc import IntegrityError
 from .config import Settings
-from .database import Base, LessonSession, SavedPhrase, MediaJob, GeneratedLesson, database, now
+from .database import Base, LessonSession, SavedPhrase, SavedWord, MediaJob, GeneratedLesson, database, now
 from .fixtures import LESSON, LESSON_ID, PHRASES, lesson_public
 from .providers import MockConversation
 from .live import OllamaConversation, LocalSpeech, ProviderFailure
 from .remote_asr import transcribe_remote, group_practice_clips
 from .pronunciation import compare_phrase
 from .remote_speech import MossNanoSpeech, VoxCPMSpeech
-from .schemas import CreateSession, Mutation, Listening, Answers, Practice, Turn, CreateJob, SessionView, JobView, Synthesis, GenerateLesson, ImportURL, YouTubeTranscriptRequest
+from .schemas import CreateSession, Mutation, Listening, Answers, Practice, Turn, CreateJob, SessionView, JobView, Synthesis, GenerateLesson, ImportURL, YouTubeTranscriptRequest, SaveWord, UpdateWord
 from .service import Lessons, owned, view, recap
 from .jobs import enqueue, job_owned, job_view
 from .catalogue import get_lesson, public_lesson, find_phrase
 from .generate import generate_lesson
 from .imports import import_url
 from .youtube_captions import CaptionUnavailable, fetch_youtube_captions
+
+
+def word_view(row):
+    return {key:getattr(row,key) for key in ('id','word','meaning','source_sentence','lesson_id','status','created_at','updated_at')}
 
 
 def create_app(settings: Settings | None = None, conversation=None):
@@ -42,7 +46,7 @@ def create_app(settings: Settings | None = None, conversation=None):
     app.state.factory = factory
     app.state.engine = engine
     app.add_middleware(CORSMiddleware, allow_origins=list(settings.cors_origins), allow_credentials=False,
-                       allow_methods=['GET','POST','PUT','DELETE'], allow_headers=['Authorization','Content-Type'])
+                       allow_methods=['GET','POST','PUT','PATCH','DELETE'], allow_headers=['Authorization','Content-Type'])
     bearer = HTTPBearer(auto_error=False)
     def user(credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)]):
         if credentials and credentials.scheme.lower() == 'bearer' and len(credentials.credentials) <= 4096:
@@ -85,7 +89,8 @@ def create_app(settings: Settings | None = None, conversation=None):
             doc=get_lesson(db,owner,lesson_id)
             return {'lesson_id':lesson_id,'lines':doc['lines'],
                     'playback_text':doc.get('playback_text',' '.join(l['text'] for l in doc['lines'])),
-                    'mode':'generated' if doc.get('generated') else 'authored_fixture'}
+                    'mode':'generated' if doc.get('generated') else 'authored_fixture',
+                    'source_segments':doc.get('source_segments',[]),'source_id':doc.get('source_id','')}
 
     @api.post('/studio/lessons',status_code=201)
     def generate(body: GenerateLesson, owner: User):
@@ -100,6 +105,9 @@ def create_app(settings: Settings | None = None, conversation=None):
                 return public_lesson(old.document)
         doc=generate_lesson(body.text,body.level,body.source_kind,settings.ollama_model)
         doc['id']=lid
+        if body.source_segments:
+            doc['source_segments']=[segment.model_dump() for segment in body.source_segments]
+        if body.source_id:doc['source_id']=body.source_id
         for i,p in enumerate(doc['phrases']):p['id']=f'{lid}:p{i+1}'
         doc['_fingerprint']=fingerprint
         with factory() as db:
@@ -220,6 +228,51 @@ def create_app(settings: Settings | None = None, conversation=None):
         with factory() as db:
             db.execute(delete(SavedPhrase).where(SavedPhrase.owner == owner, SavedPhrase.phrase_id == phrase_id))
             db.commit()
+        return Response(status_code=204)
+
+    @api.get('/vocabulary')
+    def vocabulary(owner: User, status: Literal['learning','known'] | None = None):
+        with factory() as db:
+            query=select(SavedWord).where(SavedWord.owner==owner)
+            if status:query=query.where(SavedWord.status==status)
+            rows=db.scalars(query.order_by(SavedWord.updated_at.desc()))
+            return {'items':[word_view(row) for row in rows]}
+
+    @api.post('/vocabulary', status_code=201)
+    def save_word(body: SaveWord, owner: User):
+        normalized=' '.join(body.word.casefold().split())
+        if not normalized or not any(char.isalpha() for char in normalized):
+            raise HTTPException(422,'Enter a word or expression to save.')
+        with factory() as db:
+            row=db.scalar(select(SavedWord).where(SavedWord.owner==owner,
+                SavedWord.normalized_word==normalized,SavedWord.source_sentence==body.source_sentence))
+            if row is None:
+                row=SavedWord(id=str(uuid5(NAMESPACE_URL,f'word:{owner}:{normalized}:{body.source_sentence}')),
+                    owner=owner,word=body.word,normalized_word=normalized,meaning=body.meaning,
+                    source_sentence=body.source_sentence,lesson_id=body.lesson_id,status='learning')
+                db.add(row)
+            else:
+                if body.meaning:row.meaning=body.meaning
+                if body.lesson_id:row.lesson_id=body.lesson_id
+                row.updated_at=now()
+            db.commit();db.refresh(row)
+            return {'word':word_view(row),'saved':True}
+
+    @api.patch('/vocabulary/{word_id}')
+    def update_word(word_id: UUID, body: UpdateWord, owner: User):
+        with factory() as db:
+            row=db.scalar(select(SavedWord).where(SavedWord.id==str(word_id),SavedWord.owner==owner))
+            if row is None:raise HTTPException(404,'Saved word not found.')
+            changes=body.model_dump(exclude_unset=True)
+            if any(value is None for value in changes.values()):raise HTTPException(422,'Word updates cannot be null.')
+            for key,value in changes.items():setattr(row,key,value)
+            row.updated_at=now();db.commit();db.refresh(row)
+            return {'word':word_view(row)}
+
+    @api.delete('/vocabulary/{word_id}',status_code=204)
+    def delete_word(word_id: UUID, owner: User):
+        with factory() as db:
+            db.execute(delete(SavedWord).where(SavedWord.id==str(word_id),SavedWord.owner==owner));db.commit()
         return Response(status_code=204)
 
     @api.post('/jobs', response_model=JobView, status_code=202)
