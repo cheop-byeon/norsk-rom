@@ -6,7 +6,7 @@ from norsk_api.main import create_app
 from norsk_api.config import Settings
 from norsk_api.fixtures import LESSON
 from norsk_api.live import ProviderFailure
-from norsk_api.generate import DraftLesson, validate_draft
+from norsk_api.generate import DraftLesson, validate_draft, generate_lesson
 
 KEY='a'*40
 OTHER='b'*40
@@ -85,3 +85,29 @@ def test_provider_errors_and_asset_allowlist(client,monkeypatch):
 def test_unsupported_generated_evidence_is_rejected():
     draft=DraftLesson(title='Test',roleplay_context='Test',opening='Hei',questions=[dict(prompt='When?',options=['one','two','three'],answer=0,evidence_quote='invented',explanation='Test')]*2,phrases=[dict(text='Hei',meaning='Hello'),dict(text='Norge',meaning='Norway')])
     with pytest.raises(ValueError):validate_draft(draft,'Hei Norge.','A1','text')
+
+
+def test_lesson_generation_retries_and_normalizes_exact_source_spans(monkeypatch):
+    import json
+    import norsk_api.generate as module
+    text='Det bøtter ned. Det pøser ned.'
+    def draft(phrases,quote):
+        return json.dumps({'title':'Rainy weather','roleplay_context':'Talk about rain','opening':'Det regner.','questions':[
+            {'prompt':'What is happening?','options':['It rains heavily','It is sunny','It snows'],'answer':0,'evidence_quote':quote,'explanation':'The source describes heavy rain.'},
+            {'prompt':'Which phrase is used?','options':['Bøtter ned','Solen skinner','Det snør'],'answer':0,'evidence_quote':quote,'explanation':'The phrase means heavy rain.'}],
+            'phrases':[{'text':p,'meaning':'Heavy rain.'} for p in phrases]})
+    responses=[draft(['invented phrase','other phrase'],'Det bøtter ned.'),draft(['det bøtter ned','det pøser ned'],'Det bøtter ned. ')]
+    class Response:
+        def __init__(self,content):self.content=content
+        def raise_for_status(self):pass
+        def json(self):return {'message':{'content':self.content}}
+    class Client:
+        def __init__(self,**kwargs):self.calls=0
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def post(self,*args,**kwargs):
+            content=responses.pop(0);return Response(content)
+    monkeypatch.setattr(module.httpx,'Client',Client)
+    result=generate_lesson(text,'A2','audio transcript','local-test')
+    assert [item['text'] for item in result['phrases']]==['Det bøtter ned','Det pøser ned']
+    assert result['questions'][0]['evidence'][0]=='evidence1'
