@@ -2,7 +2,11 @@
 
 # Norsk rom — connected lesson prototype
 
-An original Norwegian-learning prototype. Includes a responsive browser app and an Expo / React Native entry point. No API keys, publisher articles, network integrations or recorded audio.
+An original Norwegian-learning prototype with a connected browser app and an earlier Expo / React Native entry point. Current providers and setup are documented below and in [CONNECTED_APP.md](CONNECTED_APP.md).
+
+> **Product direction (15 October 2026):** Norsk Rom will be fully on-device. Learners run the web version on their own computer and install the mobile version on their phone; lessons, recordings, history and model inference stay on that device. GitHub distributes the source/releases, not a hosted app service. Do not add cloud accounts, databases, file storage, analytics, remote AI APIs or automatic uploads.
+>
+> **Current prototype gap:** the connected browser app still uses a local FastAPI helper, and this machine's Opplest/VoxCPM2 TTS setting uses a public Hugging Face Space. The mobile `App.js` is an earlier prototype. The on-device direction is the migration target, not a claim about the current build. See [MASTER_PROMPT.md](MASTER_PROMPT.md) for the decision and migration sequence.
 
 ## Start here: My lesson
 
