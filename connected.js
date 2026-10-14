@@ -16,6 +16,17 @@ let studioMicStream=null,studioMicRecorder=null,studioMicTimer=null,studioRecord
 const stages=['listen','answer','review','practise','roleplay','recap'];
 const stageIcons=['🎧','🧩','💡','🗣️','💬','⭐'];
 function B(text,fn,cls='chip',disabled=false){const b=E('button',text,cls);b.type='button';b.disabled=disabled||busy||!!api.pending;b.onclick=fn;return b;}
+function sourceLogo(id,fallback){
+ const icon=E('span',undefined,`source-icon source-icon-${id}`);
+ const svg=(viewBox)=>{const el=document.createElementNS('http://www.w3.org/2000/svg','svg');el.setAttribute('viewBox',viewBox);el.setAttribute('aria-hidden','true');return el;};
+ const shape=(name,attrs)=>{const el=document.createElementNS('http://www.w3.org/2000/svg',name);for(const [key,value] of Object.entries(attrs))el.setAttribute(key,value);return el;};
+ if(id==='youtube'){const mark=svg('0 0 48 34');mark.append(shape('rect',{x:1,y:1,width:46,height:32,rx:9,fill:'#ff0033'}),shape('path',{d:'M20 10.5 33 17 20 23.5z',fill:'#fff'}));icon.append(mark);}
+ else if(id==='nrk')icon.append(E('span','NRK','source-logo-nrk'));
+ else if(id==='instagram'){const mark=svg('0 0 36 36');mark.append(shape('rect',{x:3,y:3,width:30,height:30,rx:9,fill:'none',stroke:'currentColor','stroke-width':3}),shape('circle',{cx:18,cy:18,r:7,fill:'none',stroke:'currentColor','stroke-width':3}),shape('circle',{cx:27,cy:9,r:2,fill:'currentColor'}));icon.append(mark);}
+ else if(id==='tiktok'){const mark=svg('0 0 36 36');mark.append(shape('path',{d:'M22 4v17.2a6.7 6.7 0 1 1-5.2-6.5v5.1a2 2 0 1 0 1.2 1.8V4h4c.3 3.2 2.1 5.5 5.5 6.2v4.4c-2.2-.4-4.1-1.3-5.5-2.8',fill:'currentColor'}));icon.append(mark);}
+ else icon.textContent=fallback;
+ return icon;
+}
 function timeLabel(seconds){const value=Math.max(0,Math.floor(seconds));return `${Math.floor(value/60)}:${String(value%60).padStart(2,'0')}`;}
 function youtubeId(value){try{const u=new URL(value),host=u.hostname.toLowerCase().replace(/^www\./,'');if(!['youtube.com','m.youtube.com','music.youtube.com','youtu.be','youtube-nocookie.com'].includes(host))return '';const id=host==='youtu.be'?u.pathname.split('/').filter(Boolean)[0]:u.searchParams.get('v')||u.pathname.match(/^\/(?:embed|shorts|live)\/([^/?]+)/)?.[1]||'';return /^[A-Za-z0-9_-]{11}$/.test(id)?id:'';}catch{return '';}}
 function isUnsupportedStreamingPage(value){try{const host=new URL(value).hostname.toLowerCase().replace(/^www\./,'');return host==='spotify.com'||host.endsWith('.spotify.com');}catch{return false;}}
@@ -131,24 +142,37 @@ function renderStudio(root){
  card.append(E('div','YOUR CONTENT → YOUR NEXT CONVERSATION','eyebrow'),E('h2','Bring something you found.'),E('p','Follow the steps from top to bottom. First choose a source, then add it, make a short transcript, and create your lesson.','muted'));
  const step=(n,title)=>E('h3',`${n}. ${title}`,'studio-step-title');
  card.append(step(1,'Choose your source'));
- const sourceOptions=[
-  ['file','📁','On my device','Use a non-DRM file you are allowed to use.'],
-  ['subtitles','💬','Streaming subtitles','Upload SRT/VTT captions you can access.'],
-  ['youtube','▶️','YouTube','Use available Norwegian captions.'],
-  ['nrk','📻','NRK','Try a public page or accessible programme audio.'],
-  ['podimo','🎧','Podimo','Import public episode details or use an authorized transcript.'],
-  ['public_audio','🎙️','Podcast / public audio','Use a public episode page or direct audio link.'],
-  ['podcast','🎧','Podcast RSS feed','Browse public episodes from a podcast feed.'],
-  ['social','📱','Public social link','Try a public TikTok, Instagram, or X (Twitter) post.'],
-  ['text','📝','Paste text','Add captions, a transcript, or Norwegian text.']
+ const sourceGroups=[
+  ['Your material',[
+   ['file','📁','On my device','Upload or record audio, video, or a supported document.'],
+   ['subtitles','💬','Subtitle file','Add SRT/VTT captions you can access.'],
+   ['text','📝','Paste text','Use a transcript or captions as a listening script.']
+  ]],
+  ['Norwegian audio',[
+   ['nrk','📻','NRK','Try public programme pages or audio.'],
+   ['podcast','🎧','Podcast RSS','Browse public podcast episodes.'],
+   ['public_audio','🎙️','Podcast / audio URL','Paste a public episode or audio link.'],
+   ['podimo','🎧','Podimo','Import text visible on public episode pages.']
+  ]],
+  ['Video & social',[
+   ['youtube','▶','YouTube','Use available Norwegian captions.'],
+   ['instagram','◎','Instagram','Try a public post if its content is accessible.'],
+   ['tiktok','♪','TikTok','Try a public post if its content is accessible.'],
+   ['social','✦','Other public social','Try an X/Twitter or other public post.']
+  ]]
  ];
- const pickerGrid=E('div',undefined,'source-picker');
- for(const [id,icon,title,description] of sourceOptions){
-  const button=E('button',undefined,'source-option'+(studioImportSource===id?' selected':''));button.type='button';button.disabled=busy;button.setAttribute('aria-pressed',studioImportSource===id?'true':'false');
-  button.append(E('span',icon,'source-icon'),E('strong',title),E('small',description));
-  button.onclick=()=>{if(studioImportSource!==id){stopAudio();studioImportSource=id;studioText='';studioTextTruncated=false;studioKind='text';studioFile=null;studioYoutubeId='';studioSourceURL='';studioRequest=null;studioLongClips=[];studioSourceSegments=[];studioPodcastEpisodes=[];studioEpisodeTitle='';studioLongClipIndex=-1;if(studioURL)URL.revokeObjectURL(studioURL);studioURL=null;}render();};pickerGrid.append(button);
+ const picker=E('div',undefined,'source-categories');
+ for(const [groupTitle,options] of sourceGroups){
+  const group=E('section',undefined,'source-group');group.setAttribute('aria-label',groupTitle);group.append(E('h4',groupTitle,'source-group-title'));
+  const pickerGrid=E('div',undefined,'source-picker');
+  for(const [id,icon,title,description] of options){
+   const button=E('button',undefined,'source-option'+(studioImportSource===id?' selected':''));button.type='button';button.disabled=busy;button.setAttribute('aria-pressed',studioImportSource===id?'true':'false');
+   button.append(sourceLogo(id,icon),E('strong',title),E('small',description));
+   button.onclick=()=>{if(studioImportSource!==id){stopAudio();studioImportSource=id;studioText='';studioTextTruncated=false;studioKind='text';studioFile=null;studioYoutubeId='';studioSourceURL='';studioRequest=null;studioLongClips=[];studioSourceSegments=[];studioPodcastEpisodes=[];studioEpisodeTitle='';studioLongClipIndex=-1;if(studioURL)URL.revokeObjectURL(studioURL);studioURL=null;}render();};pickerGrid.append(button);
+  }
+  group.append(pickerGrid);picker.append(group);
  }
- card.append(pickerGrid);
+ card.append(picker);
 
  if(['file','subtitles'].includes(studioImportSource)){
   card.append(step(2,studioImportSource==='subtitles'?'Choose a subtitle file':'Record, upload, or open a document'));
@@ -163,11 +187,11 @@ function renderStudio(root){
   if(studioRecording)card.append(E('p','Recording locally in this tab · maximum 90 seconds. Select Stop recording when finished.','notice'));
   else if(studioFile?.name==='norsk-rom-microphone.webm')card.append(E('p','Microphone clip ready. Listen to it, choose a segment, then make the transcript.','notice'));
  }
- if(['youtube','nrk','podimo','public_audio','podcast','social'].includes(studioImportSource)){
-  card.append(step(2,studioImportSource==='youtube'?'Add your YouTube link':studioImportSource==='nrk'?'Add an NRK link':studioImportSource==='podimo'?'Add a Podimo episode link':studioImportSource==='podcast'?'Add a podcast RSS feed':studioImportSource==='social'?'Add a public social link':'Add a public podcast or audio link'));
-  const urlInput=E('input');urlInput.type='url';urlInput.placeholder=studioImportSource==='youtube'?'Paste YouTube URL here':studioImportSource==='nrk'?'Paste an NRK programme or article URL':studioImportSource==='podimo'?'Paste a public Podimo episode page URL':studioImportSource==='podcast'?'Paste a podcast RSS or Atom feed URL':studioImportSource==='social'?'Paste a public TikTok, Instagram, or X (Twitter) URL':'Paste a public episode page or direct audio URL';urlInput.value=studioSourceURL;urlInput.autocomplete='url';urlInput.setAttribute('aria-label',studioImportSource==='podcast'?'Podcast feed URL':'Source URL');urlInput.oninput=()=>{studioSourceURL=urlInput.value;};card.append(urlInput);
+ if(['youtube','nrk','podimo','public_audio','podcast','social','instagram','tiktok'].includes(studioImportSource)){
+  card.append(step(2,studioImportSource==='youtube'?'Add your YouTube link':studioImportSource==='nrk'?'Add an NRK link':studioImportSource==='podimo'?'Add a Podimo episode link':studioImportSource==='podcast'?'Add a podcast RSS feed':studioImportSource==='instagram'?'Add an Instagram link':studioImportSource==='tiktok'?'Add a TikTok link':studioImportSource==='social'?'Add another public social link':'Add a public podcast or audio link'));
+  const urlInput=E('input');urlInput.type='url';urlInput.placeholder=studioImportSource==='youtube'?'Paste YouTube URL here':studioImportSource==='nrk'?'Paste an NRK programme or article URL':studioImportSource==='podimo'?'Paste a public Podimo episode page URL':studioImportSource==='podcast'?'Paste a podcast RSS or Atom feed URL':studioImportSource==='instagram'?'Paste a public Instagram post URL':studioImportSource==='tiktok'?'Paste a public TikTok video URL':studioImportSource==='social'?'Paste a public X/Twitter URL':'Paste a public episode page or direct audio URL';urlInput.value=studioSourceURL;urlInput.autocomplete='url';urlInput.setAttribute('aria-label',studioImportSource==='podcast'?'Podcast feed URL':'Source URL');urlInput.oninput=()=>{studioSourceURL=urlInput.value;};card.append(urlInput);
   if(studioImportSource==='podcast'){card.append(B('Try the Norskpodden learner feed',()=>{studioSourceURL='https://feeds.captivate.fm/norskpodden/';urlInput.value=studioSourceURL;},'chip'));const links=E('p',undefined,'notice');for(const [label,href] of [['Browse NRK Radio','https://radio.nrk.no/podkast'],['Browse Aftenposten podcasts','https://www.aftenposten.no/podkast']]){const link=E('a',label);link.href=href;link.target='_blank';link.rel='noopener noreferrer';links.append(link,E('span',' · '));}links.append(E('span','Norskpodden is a learner-focused feed; the other catalogues offer authentic Norwegian listening.'));card.append(links);}
-  const importLabel=studioImportSource==='youtube'?'Load YouTube video':studioImportSource==='nrk'?'Import NRK source':studioImportSource==='podimo'?'Import Podimo page':studioImportSource==='podcast'?'Load podcast episodes':studioImportSource==='social'?'Try public post':'Import podcast / audio';
+  const importLabel=studioImportSource==='youtube'?'Load YouTube video':studioImportSource==='nrk'?'Import NRK source':studioImportSource==='podimo'?'Import Podimo page':studioImportSource==='podcast'?'Load podcast episodes':studioImportSource==='instagram'?'Try public Instagram post':studioImportSource==='tiktok'?'Try public TikTok video':studioImportSource==='social'?'Try public post':'Import podcast / audio';
   card.append(B(importLabel,()=>run(async()=>{
    if(!studioSourceURL.trim())throw new Error('Paste a URL first.');
    const youtubeVideoId=youtubeId(studioSourceURL.trim());
@@ -175,6 +199,7 @@ function renderStudio(root){
    if(studioImportSource!=='youtube'&&youtubeVideoId)throw new Error('Choose the YouTube source option for YouTube links.');
    if(studioImportSource==='nrk'){let host='';try{host=new URL(studioSourceURL.trim()).hostname.toLowerCase();}catch{}if(host!=='nrk.no'&&!host.endsWith('.nrk.no'))throw new Error('That link is not on nrk.no. Choose “Podcast / public audio” for a public episode or direct audio link.');}
    if(studioImportSource==='podimo'){let host='';try{host=new URL(studioSourceURL.trim()).hostname.toLowerCase();}catch{}if(host!=='podimo.com'&&!host.endsWith('.podimo.com'))throw new Error('Paste a link from podimo.com. For a publisher’s public RSS feed, choose “Podcast RSS feed” instead.');}
+   for(const [source,hosts,label] of [['instagram',['instagram.com'],'Instagram'],['tiktok',['tiktok.com','vm.tiktok.com'],'TikTok'],['social',['x.com','twitter.com'],'X/Twitter']])if(studioImportSource===source){let host='';try{host=new URL(studioSourceURL.trim()).hostname.toLowerCase().replace(/^www\./,'');}catch{}if(!hosts.some(allowed=>host===allowed||host.endsWith('.'+allowed)))throw new Error(`Paste a public ${label} link.`);}
    if(youtubeVideoId){stopAudio();studioYoutubeId=youtubeVideoId;studioYoutubeStart=0;studioYoutubeEnd=20;studioFile=null;if(studioURL)URL.revokeObjectURL(studioURL);studioURL=null;studioText='';studioKind='audio transcript';studioRequest=null;return;}
    if(studioImportSource==='podcast'){const feed=await api.request('/studio/podcast-feed',{method:'POST',body:{url:studioSourceURL.trim()},timeoutMs:60000});studioPodcastEpisodes=feed.episodes||[];studioEpisodeTitle=feed.title||'Podcast';studioText='';studioFile=null;return;}
    if(isUnsupportedStreamingPage(studioSourceURL.trim()))throw new Error('Spotify streaming pages are not supported. Try a public direct audio link or a file you are allowed to use.');
@@ -186,11 +211,11 @@ function renderStudio(root){
     studioFile=new File([result],name,{type:result.type||'application/octet-stream'});studioURL=URL.createObjectURL(studioFile);studioStart=0;studioEnd=20;studioText='';studioKind='audio transcript';
    }else{studioText=result.text||'';studioKind='text';studioFile=null;studioYoutubeId='';if(studioURL)URL.revokeObjectURL(studioURL);studioURL=null;}
    studioRequest=null;
-  },studioImportSource==='nrk'?'Importing NRK source…':studioImportSource==='podimo'?'Loading public Podimo page…':studioImportSource==='public_audio'?'Importing public audio…':'Loading source…'),'primary dark'));
-  const sourceNotice=E('p',studioImportSource==='youtube'?'The video appears below. Norsk Rom uses available Norwegian captions and does not download YouTube audio.':studioImportSource==='nrk'?'NRK pages vary. Norsk Rom tries public text or directly accessible media; it cannot sign in or bypass DRM.':studioImportSource==='podimo'?'This imports only text visible on a public Podimo page; it may be a description, not an episode transcript. Norsk Rom does not sign in, extract subscriber audio, or use offline downloads. Try a publisher’s public RSS feed or a transcript/media file you are allowed to use.':'', 'notice');
+  },studioImportSource==='nrk'?'Importing NRK source…':studioImportSource==='podimo'?'Loading public Podimo page…':studioImportSource==='public_audio'?'Importing public audio…':studioImportSource==='instagram'?'Trying public Instagram content…':studioImportSource==='tiktok'?'Trying public TikTok content…':'Loading source…'),'primary dark'));
+  const sourceNotice=E('p',studioImportSource==='youtube'?'The video appears below. Norsk Rom uses available Norwegian captions and does not download YouTube audio.':studioImportSource==='nrk'?'NRK pages vary. Norsk Rom tries public text or directly accessible media; it cannot sign in or bypass DRM.':studioImportSource==='podimo'?'This imports only text visible on a public Podimo page; it may be a description, not an episode transcript. Norsk Rom does not sign in, extract subscriber audio, or use offline downloads. Try a publisher’s public RSS feed or a transcript/media file you are allowed to use.':(['instagram','tiktok','social'].includes(studioImportSource)?'Only public page text is attempted. Sign-in or platform restrictions may block imports; use an audio file, captions, or RSS feed you are allowed to process if this fails.':' '), 'notice');
   if(studioImportSource==='podimo'){sourceNotice.append(document.createTextNode(' '));const browse=E('a','Browse Podimo shows');browse.href='https://podimo.com/no/shows';browse.target='_blank';browse.rel='noopener noreferrer';sourceNotice.append(browse,document.createTextNode(' · Read '));const terms=E('a','Podimo’s terms');terms.href='https://podimo.com/no/terms-of-use';terms.target='_blank';terms.rel='noopener noreferrer';sourceNotice.append(terms,document.createTextNode(' for its content-use rules.'));}
-  if(studioImportSource==='podimo')card.append(sourceNotice);
-  else card.append(E('p',studioImportSource==='podcast'?'RSS/Atom feeds expose episode details and public audio enclosures. A subscription-only or private feed may not be accessible. Norsk Rom does not retain the feed or episode.':studioImportSource==='social'?'This is best-effort for public posts. If a platform blocks the link or requires sign-in, paste the captions or upload a file you are allowed to use. Norsk Rom does not extract private or DRM-protected media.':'Use an openly accessible episode page or direct audio file up to 50 MB. Sign-in, subscription-only, and DRM-protected sources are not imported.','notice'));
+  if(['podimo','instagram','tiktok','social'].includes(studioImportSource))card.append(sourceNotice);
+  else card.append(E('p',studioImportSource==='podcast'?'RSS/Atom feeds expose episode metadata and public audio enclosures. A subscription-only or private feed may not be accessible. Norsk Rom does not retain the feed or episode.':'Use an openly accessible episode page or direct audio file up to 50 MB. Sign-in, subscription-only, and DRM-protected sources are not imported.','notice'));
  }
  if(studioImportSource==='podcast'&&studioPodcastEpisodes.length){card.append(E('h3',`Episodes · ${studioEpisodeTitle}`,'studio-step-title'));for(const episode of studioPodcastEpisodes){const row=E('div',undefined,'phrase'),copy=E('div');copy.append(E('strong',episode.title),E('small',episode.published||'Podcast episode'));if(episode.description)copy.append(E('small',episode.description));row.append(copy,B('Use this episode',()=>run(async()=>{const result=await api.request('/studio/import-url',{method:'POST',body:{url:episode.audio_url},timeoutMs:120000});if(!(result instanceof Blob))throw new Error('This feed item does not link to a downloadable audio file.');const safeName=(episode.title||'podcast-episode').replace(/[^\p{L}\p{N}-]+/gu,'-').slice(0,80)+'.mp3';studioFile=new File([result],safeName,{type:result.type||'audio/mpeg'});if(studioURL)URL.revokeObjectURL(studioURL);studioURL=URL.createObjectURL(studioFile);studioStart=0;studioEnd=20;studioText='';studioKind='audio transcript';studioSourceSegments=[];},'Loading the selected podcast episode…'),'primary'));card.append(row);}}
  if(studioImportSource==='text')card.append(step(2,'Paste your Norwegian text or transcript'));
