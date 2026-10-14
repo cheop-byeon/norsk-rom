@@ -76,6 +76,7 @@ Additional routes:
 | `GET /v1/capabilities` | Explicit provider availability and supported levels |
 | `POST /v1/studio/import-document?filename=...` | Extract editable text from TXT, Markdown, SRT/VTT, text-searchable PDF, EPUB, or DOCX (25 MB maximum, up to 4,000 characters returned) |
 | `POST /v1/studio/podcast-feed` | Read public RSS/Atom episode metadata and public audio enclosure URLs; does not fetch episode audio |
+| `POST /v1/studio/podimo-page` | Import readable public text from a Podimo page; does not fetch subscriber audio or offline downloads |
 | `POST /v1/studio/import-url` | Import a public text page or a directly accessible audio/video file (50 MB maximum) |
 | `POST /v1/studio/youtube-transcript` | Fetch available captions for a selected YouTube segment; does not download its audio/video |
 | `POST /v1/speech/pronunciation-check?target=...` | Transcribe a short phrase and compare recognized words with the target; this is a rough hint, not phonetic scoring |

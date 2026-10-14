@@ -143,6 +143,44 @@ def import_url(url: str) -> dict:
     raise ValueError('Could not open that source URL.')
 
 
+def import_podimo_page(url: str) -> dict:
+    """Import only public text from a Podimo page; never fetch episode audio."""
+    def validated_page(value):
+        value = _public_http_url(value)
+        host = (urlsplit(value).hostname or '').rstrip('.').lower()
+        if host != 'podimo.com' and not host.endswith('.podimo.com'):
+            raise ValueError('Use a public episode page from podimo.com.')
+        return value
+
+    current = validated_page(url)
+    with httpx.Client(timeout=httpx.Timeout(25, connect=8), follow_redirects=False,
+                      headers={'User-Agent': 'NorskRom/0.1 (personal language-learning app)'}) as client:
+        for redirect_count in range(4):
+            current = validated_page(current)
+            with client.stream('GET', current) as response:
+                if response.status_code in {301, 302, 303, 307, 308}:
+                    location = response.headers.get('location')
+                    if not location or redirect_count == 3:
+                        raise ValueError('The Podimo page redirected too many times.')
+                    current = urljoin(current, location)
+                    continue
+                response.raise_for_status()
+                content_type = response.headers.get('content-type', '').split(';', 1)[0].lower()
+                if content_type.startswith(('audio/', 'video/')):
+                    raise ValueError('Podimo episode audio is not imported. Use public page text, a publisher RSS feed, or an authorized transcript.')
+                if content_type not in {'text/html', 'text/plain', 'application/xhtml+xml'}:
+                    raise ValueError('This Podimo page does not expose readable public text. Use a publisher RSS feed or an authorized transcript.')
+                chunks, size = [], 0
+                for chunk in response.iter_bytes():
+                    size += len(chunk)
+                    if size > MAX_TEXT_BYTES:
+                        raise ValueError('This Podimo page is too large to import.')
+                    chunks.append(chunk)
+                title, text = _extract_text(b''.join(chunks), content_type, current)
+                return {'kind': 'text', 'title': title, 'text': text, 'url': current}
+    raise ValueError('Could not open that public Podimo page.')
+
+
 def import_podcast_feed(url: str) -> dict:
     """Read a public RSS/Atom feed's audio enclosure metadata, without downloading episodes."""
     current = _public_http_url(url)

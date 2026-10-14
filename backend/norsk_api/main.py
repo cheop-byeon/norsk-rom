@@ -25,7 +25,7 @@ from .service import Lessons, owned, view, recap
 from .jobs import enqueue, job_owned, job_view
 from .catalogue import get_lesson, public_lesson, find_phrase
 from .generate import generate_lesson
-from .imports import import_url, import_podcast_feed, extract_document
+from .imports import import_url, import_podimo_page, import_podcast_feed, extract_document
 from .youtube_captions import CaptionUnavailable, fetch_youtube_captions
 
 
@@ -133,6 +133,12 @@ def create_app(settings: Settings | None = None, conversation=None):
                 'Cache-Control':'no-store','X-Norsk-Rom-Import-Kind':'media',
                 'X-Norsk-Rom-Import-Title':result['title'][:180]})
         return {'kind':'text','title':result['title'],'text':result['text'],'url':result['url']}
+
+    @api.post('/studio/podimo-page')
+    def studio_import_podimo_page(body: ImportURL, owner: User):
+        try:return import_podimo_page(body.url)
+        except ValueError as exc:raise HTTPException(422,str(exc)) from exc
+        except Exception as exc:raise HTTPException(502,'Could not import public text from that Podimo page.') from exc
 
     @api.post('/studio/podcast-feed')
     def studio_podcast_feed(body: ImportURL, owner: User):

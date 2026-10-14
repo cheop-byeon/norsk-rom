@@ -2,7 +2,7 @@ import io
 import zipfile
 import pytest
 
-from norsk_api.imports import _extract_text, _public_http_url, import_podcast_feed, extract_document
+from norsk_api.imports import _extract_text, _public_http_url, import_podimo_page, import_podcast_feed, extract_document
 
 
 def test_extract_article_paragraphs_and_title():
@@ -44,6 +44,44 @@ def test_podcast_feed_reads_public_audio_enclosures_without_downloading_them(mon
     assert len(result['episodes'])==1
     assert result['episodes'][0]['title']=='Episode one'
     assert result['episodes'][0]['audio_url']=='https://cdn.example.org/episode.mp3'
+
+
+def test_podimo_import_extracts_only_public_page_text(monkeypatch):
+    payload=b'<html><head><title>En norsk podkast</title></head><body><h1>En norsk podkast</h1><p>En offentlig episodebeskrivelse.</p></body></html>'
+    class Response:
+        status_code=200;headers={'content-type':'text/html; charset=utf-8'}
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def iter_bytes(self):yield payload
+        def raise_for_status(self):pass
+    class Client:
+        def __init__(self,**kwargs):pass
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def stream(self,*args,**kwargs):return Response()
+    monkeypatch.setattr('norsk_api.imports._public_http_url',lambda url:url)
+    monkeypatch.setattr('norsk_api.imports.httpx.Client',Client)
+    result=import_podimo_page('https://podimo.com/no/episode/example')
+    assert result['title']=='En norsk podkast'
+    assert result['text']=='En norsk podkast\nEn offentlig episodebeskrivelse.'
+
+
+def test_podimo_import_rejects_audio_before_reading_body(monkeypatch):
+    class Response:
+        status_code=200;headers={'content-type':'audio/mpeg'}
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def iter_bytes(self):raise AssertionError('Podimo audio body must not be read')
+        def raise_for_status(self):pass
+    class Client:
+        def __init__(self,**kwargs):pass
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def stream(self,*args,**kwargs):return Response()
+    monkeypatch.setattr('norsk_api.imports._public_http_url',lambda url:url)
+    monkeypatch.setattr('norsk_api.imports.httpx.Client',Client)
+    with pytest.raises(ValueError,match='episode audio is not imported'):
+        import_podimo_page('https://podimo.com/no/episode/example')
 
 
 def test_document_import_extracts_txt_docx_and_epub_text():
