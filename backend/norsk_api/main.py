@@ -381,6 +381,12 @@ def create_app(settings: Settings | None = None, conversation=None):
     def connected_app():
         return FileResponse(frontend/'connected.html',headers={'Cache-Control':'no-store'})
 
+    @app.get('/app/assets/{filename}',include_in_schema=False)
+    def frontend_image(filename: str):
+        if filename not in {'norsk-rom-fox.png'}:
+            raise HTTPException(404,'Not found')
+        return FileResponse(frontend/'assets'/filename,headers={'Cache-Control':'no-store'})
+
     @app.get('/app/{filename}',include_in_schema=False)
     def asset(filename: str):
         if filename not in {'connected.js','api-client.js','connected.css'}:

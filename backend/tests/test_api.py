@@ -232,3 +232,12 @@ def test_configuration_and_capabilities_are_honest(setup):
     assert c.get('/openapi.json').status_code == 200
     r = c.options('/v1/lessons',headers={'Origin':'https://unknown.example','Access-Control-Request-Method':'GET'})
     assert 'access-control-allow-origin' not in r.headers
+
+
+def test_app_serves_only_the_allowlisted_mascot_asset(setup):
+    c, _, _ = setup
+    image = c.get('/app/assets/norsk-rom-fox.png')
+    assert image.status_code == 200
+    assert image.headers['content-type'] == 'image/png'
+    assert image.content.startswith(b'\x89PNG\r\n\x1a\n')
+    assert c.get('/app/assets/other.png').status_code == 404
