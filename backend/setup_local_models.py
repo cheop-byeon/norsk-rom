@@ -8,6 +8,7 @@ from huggingface_hub import snapshot_download
 ROOT = Path(__file__).resolve().parent
 NB_REVISION = '8b38492d0e4111d5d6ad825e979cb082a2da013a'
 
+TEXT_MODEL = 'hf.co/NbAiLab/borealis-open-4b-gguf'
 def main():
     config_path = ROOT / '.local-config.json'
     if not config_path.exists():
@@ -28,13 +29,13 @@ def main():
                 target.write(chunk)
         temp.replace(path)
     config = json.loads(config_path.read_text())
-    config.update(conversation_mode='ollama', ollama_model='llama3.2:latest',
+    config.update(conversation_mode='ollama', ollama_model=TEXT_MODEL,
         asr_path=str(models / 'nb-whisper-tiny'),
         tts_path=str(models / 'no_NO-talesyntese-medium.onnx'))
     config_path.write_text(json.dumps(config, indent=2)+'\n')
     os.chmod(config_path, 0o600)
     (models / 'provenance.json').write_text(json.dumps({'nb_revision': NB_REVISION,'piper_revision': revision},indent=2))
-    print('Local models configured. Start Ollama with llama3.2:latest, then start the API.')
+    print(f'Local models configured. Run `ollama pull {TEXT_MODEL}`, then start the API.')
 
 if __name__ == '__main__':
     main()

@@ -38,14 +38,14 @@ On the connection screen, choose `backend/.local-config.json`. On macOS, press C
 
 | Task | Current provider |
 |---|---|
-| Speech to text | Local `NbAiLab/nb-whisper-tiny`, from Nasjonalbiblioteket |
-| Spoken output | Local Piper `no_NO-talesyntese-medium` voice |
-| Conversation, grammar suggestions, questions | Local Ollama `llama3.2:latest` |
+| Speech to text | Local `NbAiLab/nb-whisper-large`, from Nasjonalbiblioteket; uses MPS on supported Apple Silicon Macs, CPU otherwise |
+| Spoken output | Current machine: NB Opplest / VoxCPM2 (remote Hugging Face demo); fresh local setup: Piper `no_NO-talesyntese-medium` |
+| Conversation, grammar suggestions, questions | Local Ollama `hf.co/NbAiLab/borealis-open-4b-gguf` |
 | Storage | Local SQLite via SQLAlchemy |
 
 NB-Whisper recognizes speech; it does not generate the spoken replies. Piper's voice card identifies the NB Språkbanken dataset and CC0 dataset license. Piper itself is a separate project (GPL-3.0 engine); it is not an official NB API. The app makes local HTTP calls to its FastAPI backend and Ollama, with no paid cloud calls in this configuration. Setup downloads models from Hugging Face. Model assets and their applicable licenses are separate from this source bundle.
 
-References: [NB-Whisper Tiny](https://huggingface.co/NbAiLab/nb-whisper-tiny), [Piper voice model card](https://huggingface.co/rhasspy/piper-voices/blob/main/no/no_NO/talesyntese/medium/MODEL_CARD), [Piper engine](https://github.com/OHF-Voice/piper1-gpl), [Ollama Llama 3.2](https://ollama.com/library/llama3.2).
+References: [NB-Whisper Large](https://huggingface.co/NbAiLab/nb-whisper-large), [Borealis Open 4B GGUF](https://huggingface.co/NbAiLab/borealis-open-4b-gguf), [Piper voice model card](https://huggingface.co/rhasspy/piper-voices/blob/main/no/no_NO/talesyntese/medium/MODEL_CARD), [Piper engine](https://github.com/OHF-Voice/piper1-gpl).
 
 ## Start again on this machine
 
@@ -55,7 +55,7 @@ From `/Users/jiebi/Documents/Codex/2026-10-01/i-x20/outputs/norsk-rom/backend`, 
 ./run_dev.sh
 ```
 
-The script uses the existing local environment on this machine and watches the backend Python modules. Backend code changes reload automatically. Frontend HTML, CSS and JavaScript are served directly from disk; refresh the browser to see those edits. Ollama must be running with `llama3.2:latest` installed. The downloaded speech models and your configuration are already present on this machine.
+The script uses the existing local environment on this machine and watches the backend Python modules. Backend code changes reload automatically. Frontend HTML, CSS and JavaScript are served directly from disk; refresh the browser to see those edits. Ollama must be running with `hf.co/NbAiLab/borealis-open-4b-gguf` installed. The downloaded speech models and your configuration are already present on this machine.
 
 If an older server is already occupying port 8000, stop it once from the terminal where it was started with **Control-C**, then run `./run_dev.sh`. That one-time switch is needed because the older process was started without auto-reload. After that, keep the development server running while you work; do not launch another copy for each feature. To use a different port, run `NORSK_PORT=8001 ./run_dev.sh` and open the corresponding `/app/` URL.
 
@@ -68,7 +68,7 @@ python3.12 -m venv .venv
 .venv/bin/python -m pip install -e '.[live,test]'
 .venv/bin/python init_dev.py
 .venv/bin/python setup_local_models.py
-ollama pull llama3.2:latest
+ollama pull hf.co/NbAiLab/borealis-open-4b-gguf
 ./run_dev.sh
 ```
 

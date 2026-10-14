@@ -12,7 +12,7 @@ class Settings:
     cors_origins: tuple[str, ...] = ("http://localhost:8080", "http://127.0.0.1:8080")
 
     conversation_mode: str = 'mock'
-    ollama_model: str = 'llama3.2:latest'
+    ollama_model: str = 'hf.co/NbAiLab/borealis-open-4b-gguf'
     asr_path: str = ''
     tts_path: str = ''
     tts_provider: str = 'piper'
@@ -35,7 +35,7 @@ class Settings:
         return cls(database_url=os.environ.get('NORSK_DATABASE_URL', cls.__dataclass_fields__['database_url'].default),
                    api_keys=keys,
                    conversation_mode=os.environ.get('NORSK_CONVERSATION',config.get('conversation_mode','mock')),
-                   ollama_model=os.environ.get('NORSK_OLLAMA_MODEL',config.get('ollama_model','llama3.2:latest')),
+                   ollama_model=os.environ.get('NORSK_OLLAMA_MODEL',config.get('ollama_model','hf.co/NbAiLab/borealis-open-4b-gguf')),
                    asr_path=os.environ.get('NORSK_ASR_PATH',config.get('asr_path','')),
                    tts_provider=os.environ.get('NORSK_TTS_PROVIDER',config.get('tts_provider','piper')),
                    tts_path=os.environ.get('NORSK_TTS_PATH',config.get('tts_path','')),

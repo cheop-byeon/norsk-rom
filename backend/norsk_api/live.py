@@ -25,7 +25,7 @@ class NeuralReply(BaseModel):
     correction: GrammarSuggestion | None = None
 
 class OllamaConversation:
-    def __init__(self, model='llama3.2:latest', base_url='http://127.0.0.1:11434'):
+    def __init__(self, model='hf.co/NbAiLab/borealis-open-4b-gguf', base_url='http://127.0.0.1:11434'):
         self.model=model
         self.base_url=base_url.rstrip('/')
         self.name=f'ollama:{model}'
