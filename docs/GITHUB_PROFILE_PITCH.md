@@ -12,14 +12,14 @@ Norsk Rom is my open-source project for learning Norwegian through listening and
 
 ## GitHub profile section
 
-Paste this into your profile `README.md`. The image is hosted in the Norsk Rom repository.
+Copy `assets/norsk-rom-fox-listening.png` into an `assets/` folder in your profile README repository, then paste this into its `README.md`. Keeping the image in that public profile repository makes it display even if Norsk Rom itself is private.
 
 ```html
 <table>
   <tr>
     <td width="190" align="center" valign="middle">
       <a href="https://github.com/cheop-byeon/norsk-rom">
-        <img src="https://raw.githubusercontent.com/cheop-byeon/norsk-rom/main/assets/norsk-rom-fox-listening.png" width="170" alt="Norsk Rom fox mascot wearing headphones and a Nordic scarf">
+        <img src="./assets/norsk-rom-fox-listening.png" width="170" alt="Norsk Rom fox mascot wearing headphones and a Nordic scarf">
       </a>
     </td>
     <td valign="middle">
