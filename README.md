@@ -6,7 +6,7 @@ An original Norwegian-learning prototype with a connected browser app and an ear
 
 > **Product direction (15 October 2026):** Norsk Rom will be fully on-device. Learners run the web version on their own computer and install the mobile version on their phone; lessons, recordings, history and model inference stay on that device. GitHub distributes the source/releases, not a hosted app service. Do not add cloud accounts, databases, file storage, analytics, remote AI APIs or automatic uploads.
 >
-> **Current prototype gap:** the connected browser app still uses a local FastAPI helper, and this machine's Opplest/VoxCPM2 TTS setting uses a public Hugging Face Space. The mobile `App.js` is an earlier prototype. The on-device direction is the migration target, not a claim about the current build. See [MASTER_PROMPT.md](MASTER_PROMPT.md) for the decision and migration sequence.
+> **Current prototype gap:** models and storage use the computer running the local FastAPI helper; the browser app is not standalone, and the mobile `App.js` is an earlier prototype. The on-device direction is the migration target, not a claim about the current build. See [MASTER_PROMPT.md](MASTER_PROMPT.md) for the decision and migration sequence.
 
 ## Start here: My lesson
 
@@ -132,7 +132,7 @@ The connected lesson transcript is split into sentences. Learners can replay one
 
 ## Backend foundation (3 October 2026)
 
-A runnable FastAPI service now lives in `backend/`. See `backend/README.md` for setup, token authorization, API contracts and the live demonstration script. It provides durable sessions, quiz review, role-play, recaps, private phrasebooks and a durable demo-job worker. Local speech providers are integrated, and optional NB-hosted speech demos are available; see [Models, providers and attribution](#models-providers-and-attribution). Supabase Auth is not connected. The browser preview still runs independently of the backend.
+A runnable FastAPI service now lives in `backend/`. See `backend/README.md` for setup, token authorization, API contracts and the live demonstration script. It provides durable sessions, quiz review, role-play, recaps, private phrasebooks and a durable demo-job worker. Hosted speech providers have been disabled; media transcription and speech synthesis use local models. The helper service still runs on the user's computer, so this is not yet a browser-only or mobile on-device build. Supabase Auth is not connected. The browser preview still runs independently of the backend.
 
 Run `python3 build-bundle.py` to package source without local credentials or databases. The backend-only archive is generated alongside the full starter archive.
 
@@ -143,12 +143,12 @@ Norsk Rom uses different models for speech recognition, speech generation and co
 | App function | Model/provider | Where it runs |
 |---|---|---|
 | Norwegian speech recognition (ASR) | [NB-Whisper Large](https://huggingface.co/NbAiLab/nb-whisper-large), `NbAiLab/nb-whisper-large` | Locally on the backend computer (MPS on supported Apple Silicon, otherwise CPU) |
-| Spoken replies (TTS) | Current machine: [NB Opplest / VoxCPM2](https://huggingface.co/NbAiLab/nb-tts-voxcpm2-voices-2607); fresh local setup: [Piper Norwegian Bokmål `talesyntese-medium`](https://huggingface.co/rhasspy/piper-voices/blob/main/no/no_NO/talesyntese/medium/MODEL_CARD) | Current voice uses NB's public Hugging Face demo; Piper runs locally |
+| Spoken replies (TTS) | [Piper Norwegian Bokmål `talesyntese-medium`](https://huggingface.co/rhasspy/piper-voices/blob/main/no/no_NO/talesyntese/medium/MODEL_CARD) | Locally on the backend computer |
 | Role-play conversation, grammar suggestions and lesson/question generation | [NB Borealis Open 4B](https://huggingface.co/NbAiLab/borealis-open-4b-gguf), served by [Ollama](https://ollama.com/) | Locally on the backend computer |
 | App data | SQLite via SQLAlchemy | Locally |
 
 The text model is NB's Norwegian-centric Borealis Open 4B. NB-Whisper handles speech recognition only; it does not create replies or speak them. Piper is a separate text-to-speech project. The Norwegian voice uses material associated with NB Språkbanken, but Piper is not an NB model or API; see its model card for dataset attribution and license details. Borealis Open 4B is based on Gemma 3 and uses the Gemma license; see the model card for terms.
 
-The backend also has explicit, optional integrations for NB's hosted [Whisper demo](https://huggingface.co/spaces/NbAiLab/nb-whisper-demo) and [MOSS Nano](https://huggingface.co/spaces/NbAiLab/nb-tts-norwegian-moss-nano-demo). Public Hugging Face Spaces can queue, sleep or be unavailable; hosted transcription sends audio, while hosted synthesis sends text. Piper and local NB-Whisper are the fresh-install defaults. The Opplest Space is powered by the NB fine-tune [`nb-tts-voxcpm2-voices-2607`](https://huggingface.co/NbAiLab/nb-tts-voxcpm2-voices-2607).
+The app exposes local inference only. NB-Whisper Large runs locally for transcription; Borealis Open 4B runs locally through Ollama for role-play and generated exercises; Piper runs locally for speech synthesis. NB Whisper is speech-to-text, not a speaking model. Hosted Hugging Face Space calls are disabled in the connected app and backend. The current web prototype still uses a local FastAPI helper on the computer; a native, fully on-device mobile implementation remains future work.
 
 Thank you to [Nasjonalbiblioteket's AI Lab](https://ai.nb.no/) for developing and sharing NB-Whisper and the Norwegian Opplest speech models. Norsk Rom is an independent project and is not affiliated with or endorsed by Nasjonalbiblioteket. Model and software licenses apply separately; review each linked model card before redistribution or deployment. For local setup and provider settings, see [CONNECTED_APP.md](CONNECTED_APP.md) and [backend/README.md](backend/README.md).

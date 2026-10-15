@@ -10,7 +10,11 @@ const commonWords = {
 };
 
 export function splitSentences(text) {
-  return (String(text).match(/[^.!?]+[.!?]+|[^.!?]+$/gu) || [])
+  const protectedText = String(text)
+    .replace(/(\d)\.(?=\d)/gu, '$1§')
+    .replace(/\b(f|eks|ca|kl|nr|bl|osv|etc)\./giu, '$1§');
+  return (protectedText.match(/[^.!?]+[.!?]+|[^.!?]+$/gu) || [])
+    .map(sentence => sentence.replace(/§/gu, '.'))
     .map(sentence => sentence.trim())
     .filter(Boolean);
 }

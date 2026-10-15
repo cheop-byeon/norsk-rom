@@ -1,5 +1,6 @@
 # Local credentials and runtime state
 backend/.local-config.json
+backend/norsk-rom-local-config.json
 backend/.env
 backend/.data/
 backend/.venv/

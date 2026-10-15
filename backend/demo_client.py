@@ -13,7 +13,7 @@ def main():
     args = parser.parse_args()
     key = os.environ.get('NORSK_DEMO_TOKEN')
     if not key:
-        config = json.loads((Path(__file__).resolve().parent / '.local-config.json').read_text())
+        config = json.loads((Path(__file__).resolve().parent / 'norsk-rom-local-config.json').read_text())
         key = next(iter(config['api_keys']))
     with httpx.Client(base_url=args.url, headers={'Authorization':f'Bearer {key}'}, timeout=15) as client:
         def checked(r):

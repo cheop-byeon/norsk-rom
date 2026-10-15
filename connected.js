@@ -1,15 +1,14 @@
 import {NorskClient} from './api-client.js';
-import {splitSentences,wordMeaning} from './reader.js';
+import {splitSentences,wordMeaning} from './reader.js?v=karaoke-sync-7';
 const $=id=>document.getElementById(id);
 const E=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 let rememberLogin=localStorage.getItem('norsk.rememberLogin')==='true';
 let token=(rememberLogin&&localStorage.getItem('norsk.rememberToken'))||sessionStorage.getItem('norsk.token')||'';
 const api=new NorskClient({token});
-let capabilities=null,lesson=null,script=[],saved=[],savedWords=[],history=[],stage=0,busy=false,error='',draft='',inputMode='typed',answers={},played=false,tab='lesson',playbackText='',lessonSourceSegments=[],lessonSourceId='',catalogue=[],studioText='',studioTextTruncated=false,studioLevel='A2',studioKind='text',studioFile=null,studioURL=null,studioStart=0,studioEnd=20,studioRequest=null,studioSourceURL='',studioImportSource='file',studioYoutubeId='',studioYoutubeStart=0,studioYoutubeEnd=20,studioLongClips=[],studioSourceSegments=[],studioLongClipIndex=-1,pronunciationTarget='',pronunciationFeedback=null,activeReaderSentence='',dictationTarget='',dictationInput='',dictationFeedback='',reviewIndex=0,reviewRevealed=false;
+let capabilities=null,lesson=null,script=[],saved=[],savedWords=[],history=[],stage=0,busy=false,error='',draft='',inputMode='typed',answers={},played=false,tab='lesson',playbackText='',lessonSourceSegments=[],sourceTranscriptSegments=[],karaokeSentences=[],activeKaraokeIndex=-1,activeKaraokeWord=null,sourceAudioPlaying=false,lessonSourceId='',lessonSourceAudioAvailable=false,lessonSourceAudioURL=null,catalogue=[],studioText='',studioTextTruncated=false,studioLevel='A2',studioKind='text',studioFile=null,studioURL=null,studioStart=0,studioEnd=20,studioRequest=null,studioSourceURL='',studioImportSource='file',studioYoutubeId='',studioYoutubeStart=0,studioYoutubeEnd=20,studioLongClips=[],studioSourceSegments=[],studioLongClipIndex=-1,pronunciationTarget='',pronunciationFeedback=null,activeReaderSentence='',dictationTarget='',dictationInput='',dictationFeedback='',reviewIndex=0,reviewRevealed=false;
 let speechVoice=localStorage.getItem('norsk.voice')||'female',speechPace=localStorage.getItem('norsk.pace')||'slow';
 if(!['female','male'].includes(speechVoice))speechVoice='female';
 if(!['slow','normal','fast'].includes(speechPace))speechPace='slow';
-let transcriptionProvider='local';
 let speechWaiting=false;
 let audio=null,audioURL=null,originalAudio=null,mediaStream=null,recorder=null,recordTimer=null,recording=false,audioGeneration=0,recordEpoch=0;
 let studioMicStream=null,studioMicRecorder=null,studioMicTimer=null,studioRecording=false,studioRecordEpoch=0,studioPodcastEpisodes=[],studioEpisodeTitle='';
@@ -29,10 +28,29 @@ function sourceLogo(id,fallback){
  return icon;
 }
 function timeLabel(seconds){const value=Math.max(0,Math.floor(seconds));return `${Math.floor(value/60)}:${String(value%60).padStart(2,'0')}`;}
+function makeKaraokeSentences(segments){
+ const sentences=[];
+ for(const segment of segments){
+  const parts=splitSentences(segment.text||'').filter(Boolean),weights=parts.map(text=>Math.max(1,text.length)),total=weights.reduce((sum,n)=>sum+n,0);
+  let offset=0;
+  parts.forEach((text,index)=>{const start=Number(segment.start),end=Number(segment.end),from=start+(end-start)*offset/total;offset+=weights[index];const to=start+(end-start)*offset/total;sentences.push({text,start:from,end:to});});
+ }
+ return sentences;
+}
+function updateKaraokeAt(seconds){
+ if(!karaokeSentences.length)return;
+ let index=karaokeSentences.findIndex(item=>seconds>=item.start&&seconds<item.end);
+ if(index<0&&seconds>=karaokeSentences.at(-1).end)index=karaokeSentences.length-1;
+ if(index===activeKaraokeIndex)return;
+ activeKaraokeIndex=index;
+ document.querySelectorAll('.karaoke-sentence').forEach((row,i)=>row.classList.toggle('active',i===index));
+ const active=index>=0?document.getElementById(`karaoke-sentence-${index}`):null;
+ active?.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
 function youtubeId(value){try{const u=new URL(value),host=u.hostname.toLowerCase().replace(/^www\./,'');if(!['youtube.com','m.youtube.com','music.youtube.com','youtu.be','youtube-nocookie.com'].includes(host))return '';const id=host==='youtu.be'?u.pathname.split('/').filter(Boolean)[0]:u.searchParams.get('v')||u.pathname.match(/^\/(?:embed|shorts|live)\/([^/?]+)/)?.[1]||'';return /^[A-Za-z0-9_-]{11}$/.test(id)?id:'';}catch{return '';}}
 function isUnsupportedStreamingPage(value){try{const host=new URL(value).hostname.toLowerCase().replace(/^www\./,'');return host==='spotify.com'||host.endsWith('.spotify.com');}catch{return false;}}
 function youtubeEmbed(id,start=0,end=0,autoplay=false){return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?rel=0&start=${Math.max(0,Math.floor(start))}${end>start?`&end=${Math.floor(end)}`:''}${autoplay?'&autoplay=1':''}`;}
-function stopAudio(){audioGeneration++;if(audio)audio.pause();if(audioURL)URL.revokeObjectURL(audioURL);if(originalAudio){originalAudio.pause();originalAudio.src='';}audio=null;audioURL=null;originalAudio=null;}
+function stopAudio(){audioGeneration++;if(audio)audio.pause();if(audioURL)URL.revokeObjectURL(audioURL);if(originalAudio){originalAudio.pause();originalAudio.src='';}if(lessonSourceAudioURL)URL.revokeObjectURL(lessonSourceAudioURL);$('karaoke-audio-player')?.replaceChildren();$('audio-output')?.replaceChildren();document.querySelectorAll('.karaoke-sentence.active').forEach(row=>row.classList.remove('active'));audio=null;audioURL=null;originalAudio=null;lessonSourceAudioURL=null;sourceAudioPlaying=false;activeKaraokeIndex=-1;if($('operation'))$('operation').textContent='Playback stopped.';}
 function stopStudioRecording(discard=true){if(discard)studioRecordEpoch++;if(studioMicRecorder?.state==='recording')studioMicRecorder.stop();studioMicStream?.getTracks().forEach(t=>t.stop());clearTimeout(studioMicTimer);studioRecording=false;}
 function stopRecording(discard=false){if(discard)recordEpoch++;if(recorder&&recorder.state==='recording')recorder.stop();mediaStream?.getTracks().forEach(t=>t.stop());clearTimeout(recordTimer);recording=false;stopStudioRecording(true);}
 function syncStage(){if(api.session)stage=stages.indexOf(api.session.state.step);}
@@ -49,7 +67,7 @@ async function connect(){
  sessionStorage.setItem('norsk.token',api.token);
  if(rememberLogin){localStorage.setItem('norsk.rememberLogin','true');localStorage.setItem('norsk.rememberToken',api.token);}else{localStorage.removeItem('norsk.rememberLogin');localStorage.removeItem('norsk.rememberToken');}
 }
-async function loadLesson(id){lesson=await api.request('/lessons/'+id);const data=await api.request('/lessons/'+id+'/script');script=data.lines;playbackText=data.playback_text;lessonSourceSegments=data.source_segments||[];lessonSourceId=data.source_id||'';}
+async function loadLesson(id){lesson=await api.request('/lessons/'+id);const data=await api.request('/lessons/'+id+'/script');script=data.lines;playbackText=data.playback_text;lessonSourceSegments=data.source_segments||[];sourceTranscriptSegments=data.source_transcript_segments||[];karaokeSentences=makeKaraokeSentences(sourceTranscriptSegments);activeKaraokeIndex=-1;activeKaraokeWord=null;lessonSourceId=data.source_id||'';lessonSourceAudioAvailable=!!data.source_audio;}
 async function advance(action,payload={},next){await api.mutate(action,payload);syncStage();if(next!==undefined)stage=next;}
 async function play(text,wholeClip=false,onEnd=null){
  if(speechWaiting){$('operation').textContent='Speech is already being generated. Please wait.';return;}
@@ -58,9 +76,11 @@ async function play(text,wholeClip=false,onEnd=null){
  const started=Date.now();const waiting=setInterval(()=>{if(generation===audioGeneration)$('operation').textContent='Waiting for '+capabilities.tts+' · '+Math.floor((Date.now()-started)/1000)+' seconds · remote speech can take several minutes.';},1000);
  try{
   const blob=await api.request('/speech/synthesize',{method:'POST',body:{text,voice:speechVoice,pace:speechPace},timeoutMs:620000});clearInterval(waiting);if(generation!==audioGeneration)return;
-  audioURL=URL.createObjectURL(blob);audio=new Audio(audioURL);audio.playbackRate=Number($('speed')?.value||1);
-  audio.onended=()=>{if(wholeClip)played=true;$('operation').textContent='Playback finished.';if(onEnd)onEnd();else render();};
-  await audio.play();$('operation').textContent='Playing · '+capabilities.tts;
+  audioURL=URL.createObjectURL(blob);audio=document.createElement('audio');audio.controls=true;audio.preload='auto';audio.src=audioURL;audio.playbackRate=Number($('speed')?.value||1);audio.setAttribute('aria-label','Generated Norwegian audio');$('audio-output')?.replaceChildren(audio);
+  audio.onended=()=>{if(wholeClip)played=true;$('operation').textContent='Playback finished. Use the player below to replay.';if(onEnd)onEnd();else render();};
+  audio.onerror=()=>{$('operation').textContent='Audio arrived, but this browser could not decode it. Use another voice or try again.';};
+  try{await audio.play();$('operation').textContent='Playing · '+capabilities.tts;}
+  catch(e){if(e.name==='NotAllowedError')$('operation').textContent='Audio is ready. Press Play in the player below.';else throw e;}
  }catch(e){if(generation===audioGeneration){error=e.message;$('operation').textContent='';render();}}
  finally{clearInterval(waiting);speechWaiting=false;}
 }
@@ -76,11 +96,29 @@ async function playOriginalClip(){
   await clip.play();$('operation').textContent='Playing the original source clip.';
  }catch(e){if(originalAudio===clip){error=e.message;render();}}
 }
+async function playLessonSource(fullRecording=false,seekTo=null){
+ if(!lessonSourceAudioAvailable){error='This lesson has no saved original recording. Import an audio file in Studio to keep it with the lesson.';render();return;}
+ stopAudio();const generation=audioGeneration;$('operation').textContent='Loading the original recording…';
+ try{
+  const blob=await api.request(`/lessons/${lesson.id}/source-audio`,{timeoutMs:120000});if(generation!==audioGeneration)return;
+  lessonSourceAudioURL=URL.createObjectURL(blob);const clip=new Audio(lessonSourceAudioURL);originalAudio=clip;clip.preload='metadata';clip.controls=true;clip.className='karaoke-audio';clip.setAttribute('aria-label','Original recording playback');
+  await new Promise((resolve,reject)=>{if(clip.readyState>=1)return resolve();clip.addEventListener('loadedmetadata',resolve,{once:true});clip.addEventListener('error',()=>reject(new Error('The browser could not open the saved source recording.')),{once:true});});
+  if(originalAudio!==clip)return;
+  const starts=lessonSourceSegments.map(segment=>Number(segment.start)).filter(Number.isFinite),ends=lessonSourceSegments.map(segment=>Number(segment.end)).filter(Number.isFinite);
+  const start=seekTo!==null?Math.max(0,Math.min(Number(seekTo),clip.duration-0.1)):fullRecording?0:(starts.length?Math.min(...starts):0),end=(fullRecording||seekTo!==null)?clip.duration:(ends.length?Math.min(clip.duration,Math.max(...ends)):clip.duration);
+  clip.currentTime=Math.min(start,Math.max(0,clip.duration-0.1));clip.playbackRate=Number($('speed')?.value||1);
+  sourceAudioPlaying=fullRecording||seekTo!==null;
+  $('karaoke-audio-player')?.append(clip);
+  const finish=()=>{if(originalAudio!==clip)return;clip.pause();sourceAudioPlaying=false;played=true;$('operation').textContent='Source playback finished.';render();};
+  clip.ontimeupdate=()=>{if(sourceAudioPlaying)updateKaraokeAt(clip.currentTime);if(!fullRecording&&seekTo===null&&clip.currentTime>=end)finish();};clip.onended=finish;
+  await clip.play();$('operation').textContent=fullRecording?'Playing the full original recording.':'Playing the original recording from this sentence.';
+ }catch(e){if(originalAudio){originalAudio=null;}error=e.message;render();}
+}
 async function transcribeBlob(blob){
- await run(async()=>{const result=await api.request('/speech/transcribe?provider='+transcriptionProvider,{method:'POST',body:blob,raw:true,timeoutMs:600000});draft=result.text;inputMode='confirmed_transcript';},transcriptionProvider==='local'?'Transcribing locally with NB-Whisper…':'Uploading selected audio to NB hosted Whisper…');
+ await run(async()=>{const result=await api.request('/speech/transcribe',{method:'POST',body:blob,raw:true,timeoutMs:600000});draft=result.text;inputMode='confirmed_transcript';},'Transcribing locally with NB-Whisper…');
 }
 async function checkPhraseAudio(blob,target){
- await run(async()=>{pronunciationFeedback=await api.request(`/speech/pronunciation-check?provider=${transcriptionProvider}&target=${encodeURIComponent(target)}`,{method:'POST',body:blob,raw:true,timeoutMs:600000});},'Listening for the phrase…');
+ await run(async()=>{pronunciationFeedback=await api.request(`/speech/pronunciation-check?target=${encodeURIComponent(target)}`,{method:'POST',body:blob,raw:true,timeoutMs:600000});},'Listening for the phrase…');
 }
 async function recordPhrase(target){
  if(recording){if(pronunciationTarget===target){stopRecording();render();}return;}
@@ -116,15 +154,12 @@ function authScreen(root){
  const form=E('form');const input=E('input');input.type='password';input.autocomplete='off';input.placeholder='Local API key';input.setAttribute('aria-label','Local API key');const submit=B('Connect',()=>{},'primary dark');submit.type='submit';
  const rememberLabel=E('label',' Keep me signed in on this device '),remember=E('input');remember.type='checkbox';remember.checked=rememberLogin;remember.setAttribute('aria-label','Keep me signed in on this device');rememberLabel.prepend(remember);
  form.append(input,rememberLabel,submit);form.onsubmit=e=>{e.preventDefault();rememberLogin=remember.checked;api.token=input.value.trim();run(connect,'Connecting…');};
- const label=E('label','Or choose backend/.local-config.json: ','notice');const file=E('input');file.type='file';file.accept='.json';file.onchange=()=>{rememberLogin=remember.checked;run(async()=>{const config=JSON.parse(await file.files[0].text());api.token=Object.keys(config.api_keys||{})[0]||'';if(!api.token)throw new Error('No API key in that file.');await connect();},'Connecting…');};label.append(file);
+ const label=E('label','Or choose backend/norsk-rom-local-config.json: ','notice');const file=E('input');file.type='file';file.accept='.json';file.onchange=()=>{rememberLogin=remember.checked;run(async()=>{const config=JSON.parse(await file.files[0].text());api.token=Object.keys(config.api_keys||{})[0]||'';if(!api.token)throw new Error('No API key in that file.');await connect();},'Connecting…');};label.append(file);
  card.append(form,E('p',rememberLogin?'This device remembers your local API key until you sign out or clear browser data.':'By default, your key lasts only for this browser tab. “Keep me signed in” stores it in this browser on this device.','notice'),label);root.append(card);
 }
 function providerStatus(){
  $('connection').replaceChildren();if(!capabilities)return;
- $('connection').append(E('div',`Conversation: ${capabilities.conversation} · Transcription: ${transcriptionProvider==='nb_hosted'?'NB-Whisper Large (hosted demo · experimental)':capabilities.transcription} · Voice: ${capabilities.tts} · Pronunciation: phrase transcript hints only`,'statusbar'));
- const asrLabel=E('label','Speech recognition '),asr=E('select');asr.setAttribute('aria-label','Speech recognition');
- for(const [value,text] of [['local','Local · NB-Whisper Tiny'],['nb_hosted','Hosted API · NB-Whisper Large (experimental)']]){const o=E('option',text);o.value=value;asr.append(o);}asr.value=transcriptionProvider;
- asr.disabled=busy||recording;asr.onchange=()=>{transcriptionProvider=asr.value;render();};asrLabel.append(asr);$('connection').append(asrLabel,E('p',transcriptionProvider==='local'?'Recordings are transcribed on your local backend.':'Hosted mode uploads your selected audio to NB’s public Hugging Face demo. Availability and retention are controlled by that service; the demo may be offline.','notice'));
+ $('connection').append(E('div',`Conversation: ${capabilities.conversation} · Transcription: ${capabilities.transcription} · Voice: ${capabilities.tts} · Pronunciation: transcript comparison hints`,'statusbar'));
  if(capabilities.tts_options){
   const controls=E('div',undefined,'actions');
   for(const [title,value,options,change] of [
@@ -189,7 +224,7 @@ function renderStudio(root){
    else{studioFile=file;studioKind='audio transcript';studioURL=URL.createObjectURL(file);studioStart=0;studioEnd=20;render();}
   };card.append(picker);
   card.append(B(studioRecording?'■ Stop recording':'🎙 Record a clip with my microphone',recordStudioClip,'chip'));
-  if(!studioFile&&!studioText)card.append(E('p',studioImportSource==='subtitles'?'Choose a Norwegian SRT or VTT subtitle file up to 25 MB. You can use captions that are available to you from a streaming service.':'Choose audio/video up to 50 MB in hosted mode (12 MB locally), or a TXT, Markdown, SRT/VTT, PDF, EPUB, or DOCX document up to 25 MB. You can also record a clip here.','notice'));
+  if(!studioFile&&!studioText)card.append(E('p',studioImportSource==='subtitles'?'Choose a Norwegian SRT or VTT subtitle file up to 25 MB. You can use captions that are available to you from a streaming service.':'Choose audio/video up to 12 MB, or a TXT, Markdown, SRT/VTT, PDF, EPUB, or DOCX document up to 25 MB. You can also record a clip here.','notice'));
   if(studioText&&studioKind==='text')card.append(E('p',studioTextTruncated?'Document text is longer than the current lesson limit. The first 4,000 characters are loaded for review.':'Document text is ready for review below. Scanned-image OCR is not enabled; PDFs need selectable text.','notice'));
   if(studioRecording)card.append(E('p','Recording locally in this tab · maximum 90 seconds. Select Stop recording when finished.','notice'));
   else if(studioFile?.name==='norsk-rom-microphone.webm')card.append(E('p','Microphone clip ready. Listen to it, choose a segment, then make the transcript.','notice'));
@@ -268,26 +303,16 @@ function renderStudio(root){
    if(count>shown)clipChoices.append(E('p','Only the first two hours are listed. Select a later range using the time fields.','notice'));
   });
   card.append(ranges,clipChoices,E('p','Long recordings are divided into selectable clips of up to 90 seconds. Choose one, listen, then make its transcript.','notice'));
-  if(transcriptionProvider==='nb_hosted'){
-   card.append(B('Transcribe the full recording · NB-Whisper',()=>run(async()=>{
-    if(studioFile.size>50*1024*1024)throw new Error('Choose a file smaller than 50 MB.');
-    if(!Number.isFinite(player.duration)||player.duration<0.25||player.duration>1800)throw new Error('The recording must be between 0.25 seconds and 30 minutes.');
-    const result=await api.request(`/speech/transcribe-long?end=${player.duration}`,{method:'POST',body:studioFile,raw:true,timeoutMs:900000});
-    studioLongClips=result.clips||[];studioSourceSegments=(result.segments||[]).map(segment=>({...segment,timestamp_quality:'hosted_asr'}));if(!studioLongClips.length)throw new Error('NB-Whisper returned a transcript without usable timestamps. Try a short clip or paste the transcript manually.');
-    studioLongClipIndex=0;studioStart=studioLongClips[0].start;studioEnd=studioLongClips[0].end;studioText=studioLongClips[0].text;studioKind='audio transcript';studioRequest=null;
-   },'Uploading the recording to NB hosted Whisper. Long audio can take several minutes…'),'primary dark'));
-   card.append(E('p','The full recording is uploaded to the public Hugging Face NB demo. Use only media you have permission to process; remote availability and handling are controlled by Hugging Face/NB.','notice'));
-  }
   if(studioLongClips.length){
    const choices=E('div',undefined,'actions');choices.append(E('p','Choose a transcript clip to review and turn into a lesson:','notice'));
    studioLongClips.forEach((clip,index)=>choices.append(B(`Clip ${index+1} · ${timeLabel(clip.start)}–${timeLabel(clip.end)}`,()=>{studioLongClipIndex=index;studioStart=clip.start;studioEnd=clip.end;studioText=clip.text;studioRequest=null;render();},studioLongClipIndex===index?'primary':'chip')));
    card.append(choices);
   }
   card.append(B('Make transcript',()=>run(async()=>{
-   if(studioFile.size>(transcriptionProvider==='nb_hosted'?50:12)*1024*1024)throw new Error(`Use a file smaller than ${transcriptionProvider==='nb_hosted'?50:12} MB.`);
+   if(studioFile.size>12*1024*1024)throw new Error('Use a file smaller than 12 MB.');
    if(!Number.isFinite(studioStart)||!Number.isFinite(studioEnd)||studioEnd-studioStart<0.25||studioEnd-studioStart>90)throw new Error('Choose a range from 0.25 to 90 seconds.');
-   const result=await api.request(`/speech/transcribe?provider=${transcriptionProvider}&start=${studioStart}&end=${studioEnd}`,{method:'POST',body:studioFile,raw:true,timeoutMs:600000});studioText=result.text;studioSourceSegments=(result.segments||[]).map(segment=>({...segment,timestamp_quality:transcriptionProvider==='local'?'local_chunk':'hosted_asr'}));studioKind='audio transcript';studioRequest=null;
-  },transcriptionProvider==='local'?'Transcribing your clip…':'Sending your clip to hosted Whisper…'),'primary dark'));
+   const result=await api.request(`/speech/transcribe?start=${studioStart}&end=${studioEnd}`,{method:'POST',body:studioFile,raw:true,timeoutMs:600000});studioText=result.text;studioSourceSegments=(result.segments||[]).map(segment=>({...segment,timestamp_quality:'local_chunk'}));studioKind='audio transcript';studioRequest=null;
+  },'Transcribing your clip locally…'),'primary dark'));
  }
  if(['file','subtitles'].includes(studioImportSource)&&!studioFile&&!studioText)card.append(E('p','Step 3 will appear here after you choose a file.','notice'));
 
@@ -299,9 +324,10 @@ function renderStudio(root){
   card.append(B('Create my lesson →',()=>run(async()=>{
    if(studioText.trim().length<30)throw new Error('Add or fetch at least 30 characters of Norwegian text first.');
    studioRequest=studioRequest||crypto.randomUUID();const sourceStart=studioYoutubeId?studioYoutubeStart:studioStart,sourceEnd=studioYoutubeId?studioYoutubeEnd:studioEnd;const timedSegments=studioSourceSegments.filter(segment=>segment.end>sourceStart&&segment.start<sourceEnd).slice(0,300);const generated=await api.request('/studio/lessons',{method:'POST',body:{text:studioText,level:studioLevel,source_kind:studioKind,source_segments:timedSegments,source_id:studioYoutubeId||(studioURL?'browser-file':''),request_id:studioRequest}});
+   if(studioFile)await api.request(`/lessons/${generated.id}/source-audio`,{method:'PUT',body:studioFile,raw:true,timeoutMs:180000});
    await loadLesson(generated.id);await api.create(generated.id);syncStage();draft='';answers={};played=false;tab='lesson';studioRequest=null;
   },'Creating your listening lesson…'),'primary dark wide',capabilities.exercise_generation==='not_configured'));
-  card.append(E('p','Your reviewed text and lesson are saved to your account. Source audio is not retained by the backend. Please review generated questions and expressions.','notice'));
+  card.append(E('p','Your reviewed text and lesson are saved to your account. Audio files you import are saved on your local backend with the lesson, so you can replay the source excerpt or full recording. Please review generated questions and expressions.','notice'));
  }
 }
 function segmentMatch(sentence){
@@ -357,6 +383,37 @@ function renderTranscriptReader(parent){
    B('Close',()=>{dictationTarget='';dictationInput='';dictationFeedback='';render();}));if(dictationFeedback)exercise.append(E('p',dictationFeedback,dictationFeedback.startsWith('That')?'feedback':'notice'));parent.append(exercise);}
 }
 
+function renderKaraokeWordDetail(parent){
+ const detail=E('aside',undefined,'word-meaning');detail.id='karaoke-word-detail';detail.setAttribute('aria-live','polite');
+ if(activeKaraokeWord){
+  const {word,sentence}=activeKaraokeWord,savedWord=savedWords.find(item=>item.word.toLocaleLowerCase('nb-NO')===word.toLocaleLowerCase('nb-NO')),hint=wordMeaning(word,lesson.phrases||[]);
+  detail.append(E('strong',word),E('p',sentence,'muted'));
+  const meaning=E('input');meaning.type='text';meaning.maxLength=300;meaning.placeholder=hint?.meaning||'Add a meaning in your own words';meaning.value=savedWord?.meaning||hint?.meaning||'';meaning.setAttribute('aria-label',`Meaning of ${word}`);detail.append(meaning);
+  detail.append(E('small',hint?(hint.phrase?`Lesson expression: “${hint.phrase}”. Check that the hint fits this sentence.`:'Starter glossary hint · check that it fits this sentence.'):'Add a translation or meaning that helps you remember this word.'));
+  const actions=E('div',undefined,'actions');actions.append(B('▶ Hear word',()=>play(word)),B(savedWord?'✓ Update saved word':'Save word',()=>run(async()=>{await api.request('/vocabulary',{method:'POST',body:{word,meaning:meaning.value,source_sentence:sentence,lesson_id:lesson.id}});savedWords=(await api.request('/vocabulary')).items;},'Saving word…'),'chip'),B(recording&&pronunciationTarget===word?'■ Stop recording':'🎙 Practise aloud',()=>recordPhrase(word),'chip',capabilities.transcription==='not_configured'),B('Close',()=>{activeKaraokeWord=null;renderKaraokeWordDetail(detail.parentElement);},'chip'));detail.append(actions);
+ }
+ const current=parent.querySelector('#karaoke-word-detail');if(current)current.replaceWith(detail);else parent.append(detail);
+}
+function showKaraokeWord(word,sentence){activeKaraokeWord={word,sentence};const panel=$('karaoke-word-detail')?.parentElement;if(panel){renderKaraokeWordDetail(panel);$('karaoke-word-detail')?.scrollIntoView({behavior:'smooth',block:'nearest'});}}
+function renderKaraokeTranscript(parent){
+ if(!karaokeSentences.length)return;
+ const block=E('section',undefined,'karaoke-card');block.append(E('h3','Follow the full recording'),E('p','Follow each sentence as it highlights. Tap an underlined word to see a meaning hint, hear it, or save it. Sentence timing is approximate because the local recognizer returns short audio chunks.','notice'));
+ const player=E('div',undefined,'karaoke-player-host');player.id='karaoke-audio-player';if(originalAudio?.controls)player.append(originalAudio);block.append(player);
+ const rows=E('div',undefined,'karaoke-list');
+ karaokeSentences.forEach((item,index)=>{
+  const row=E('article',undefined,'karaoke-sentence'+(activeKaraokeIndex===index?' active':''));row.id=`karaoke-sentence-${index}`;
+  const head=E('div',undefined,'karaoke-line-head');head.append(E('span',`${timeLabel(item.start)} · ${index+1}`,'reader-speaker'));
+  head.append(B('▶ Play from here',()=>{if(sourceAudioPlaying&&originalAudio){originalAudio.currentTime=item.start;originalAudio.play().catch(()=>{});updateKaraokeAt(item.start);}else playLessonSource(true,item.start);},'reader-hear'));
+  const words=E('p',undefined,'karaoke-words'),pattern=/[\p{L}\p{M}]+(?:[’'-][\p{L}\p{M}]+)*/gu;let cursor=0;
+  for(const match of item.text.matchAll(pattern)){
+   words.append(document.createTextNode(item.text.slice(cursor,match.index)));
+   const token=E('button',match[0],'karaoke-word');token.type='button';token.setAttribute('aria-label',`Show meaning and practice options for ${match[0]}`);token.onclick=()=>showKaraokeWord(match[0],item.text);words.append(token);cursor=match.index+match[0].length;
+  }
+  words.append(document.createTextNode(item.text.slice(cursor)));row.append(head,words);rows.append(row);
+ });
+ block.append(rows);renderKaraokeWordDetail(block);parent.append(block);
+}
+
 function render(){
  providerStatus();$('error').replaceChildren();if(error){$('error').append(E('p',error,'error'));}
  if(api.pending){const retry=E('button','Retry pending action','primary');retry.disabled=busy;retry.onclick=()=>run(async()=>{await api.retry();await api.refresh();syncStage();},'Retrying…');$('error').append(retry,E('p','The same request id will be reused to prevent duplicate submissions.','notice'));}
@@ -385,18 +442,20 @@ function render(){
  const progress=E('nav',undefined,'lesson-steps');progress.setAttribute('aria-label','Lesson progress');stages.forEach((name,i)=>{const b=B(`${stageIcons[i]} ${i+1}. ${name}`,()=>{stopAudio();stage=i;render();},'lesson-step'+(stage===i?' current':''),i>stages.indexOf(s.step));if(stage===i)b.setAttribute('aria-current','step');progress.append(b);});root.append(progress);
  root.append(E('p',`✦ Progress saved · Step ${stage+1} of ${stages.length}`,'notice'));
  const grid=E('div',undefined,'grid'),main=E('section',undefined,'card'),side=E('aside',undefined,'card');grid.append(main,side);root.append(grid);
- side.append(E('div','SAME CLIP, THROUGHOUT','eyebrow'),E('h2',lesson.source.title),E('p',lesson.mode==='generated'?(studioYoutubeId?'YouTube video embedded below; transcript speech is synthesized separately.':studioURL?'Original source audio is available in this tab; transcript speech is synthesized separately.':'Transcript speech is synthesized. Choose the source file in Studio to replay the original audio.'):'Authored Norwegian dialogue. Playback is synthesized on the backend.','notice'));
+ side.append(E('div','SAME CLIP, THROUGHOUT','eyebrow'),E('h2',lesson.source.title),E('p',lesson.mode==='generated'?(studioYoutubeId?'YouTube video embedded below; transcript speech is synthesized separately.':lessonSourceAudioAvailable?'Original source audio is saved with this lesson. Choose the excerpt or full recording below.':'Transcript speech is synthesized. Import an audio file in Studio to replay the original recording.'):'Authored Norwegian dialogue. Playback is synthesized on the backend.','notice'));
  if(lesson.mode==='generated'&&studioYoutubeId&&lessonSourceId===studioYoutubeId){const player=E('iframe');player.id='youtube-source-player';player.src=youtubeEmbed(studioYoutubeId,studioYoutubeStart,studioYoutubeEnd);player.title='YouTube listening source';player.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';player.allowFullscreen=true;player.style.cssText='width:100%;aspect-ratio:16/9;border:0;border-radius:16px';side.append(player);}
- const speed=E('select');speed.id='speed';speed.setAttribute('aria-label','Audio speed');for(const rate of ['1','0.8']){const o=E('option',rate+'×');o.value=rate;speed.append(o);}const controls=E('div',undefined,'actions');if(lesson.mode==='generated'&&studioURL)controls.append(B('▶ Original source',playOriginalClip));controls.append(B(lesson.mode==='generated'?'Hear transcript (TTS)':'Replay sample',()=>play(playbackText,true)),B('Stop audio',stopAudio),speed);side.append(controls);
+ const speed=E('select');speed.id='speed';speed.setAttribute('aria-label','Audio speed');for(const rate of ['1','0.8']){const o=E('option',rate+'×');o.value=rate;speed.append(o);}const controls=E('div',undefined,'actions');if(lesson.mode==='generated'&&lessonSourceAudioAvailable){controls.append(B('▶ Lesson excerpt',()=>playLessonSource(false)),B('🎧 Full recording',()=>playLessonSource(true)));}else if(lesson.mode==='generated'&&studioURL)controls.append(B('▶ Original source',playOriginalClip));controls.append(B(lesson.mode==='generated'?'Hear transcript (TTS)':'Replay sample',()=>play(playbackText,true)),B('Stop audio',stopAudio),speed);side.append(controls);
  for(const p of lesson.phrases){side.append(E('p',`${s.used.includes(p.id)?'✓ Used':s.practised.includes(p.id)?'✓ Practised':'○'} ${p.short}`,'notice'));}
  side.append(E('p','You can edit speech transcripts before sending. Ollama can suggest grammar corrections. Phrase practice compares the recognizer’s words with the target; it cannot score sounds, accent, or fluency.','notice'));
  const addSave=(box,p)=>box.append(B(saved.some(x=>x.id===p.id)?'✓ Saved':'Save phrase',()=>run(async()=>{await api.request('/phrases/'+p.id,{method:'PUT'});saved=(await api.request('/phrases')).items;})));
  if(stage===0){
   main.append(E('h2','Ready, set… listen!'));
   if(lesson.mode==='generated'&&studioYoutubeId){main.append(E('p','Play the selected segment in the YouTube player, then answer two questions. The app uses your confirmed transcript for the exercises.'),B('▶ Go to YouTube player',()=>$('youtube-source-player')?.scrollIntoView({behavior:'smooth',block:'center'}),'primary dark'),B('Hear transcript (TTS)',()=>play(playbackText,false)));}
+  else if(lesson.mode==='generated'&&lessonSourceAudioAvailable){const starts=lessonSourceSegments.map(segment=>Number(segment.start)).filter(Number.isFinite),ends=lessonSourceSegments.map(segment=>Number(segment.end)).filter(Number.isFinite);const excerptLength=starts.length&&ends.length?timeLabel(Math.max(...ends)-Math.min(...starts)):'lesson excerpt';main.append(E('p','Listen to the original recording for full context, or replay the excerpt used for your questions.'),B(`▶ Lesson excerpt · ${excerptLength}`,()=>playLessonSource(false),'primary dark'),B('🎧 Listen to full recording',()=>playLessonSource(true),'chip'),B('Hear transcript (TTS)',()=>play(playbackText,true),'chip'));}
   else main.append(E('p',lesson.mode==='generated'?'Listen to your confirmed source, then answer two questions.':'Is the coffee for here or takeaway? How much does it cost?'),B('▶ Listen',()=>play(playbackText,true),'primary dark'));
   if(lesson.mode==='generated'&&studioYoutubeId)main.append(B(played?'✓ Marked as listened':'I listened to the YouTube segment',()=>{played=true;render();}));
   main.append(B('Show transcript',()=>run(async()=>{if(!s.transcript_help&&!s.completed)await api.mutate('transcript-help');const lines=$('transcript-lines');lines?.classList.remove('hidden');})));main.append(E('p','Tap “Hear sentence” for a replay, or tap an underlined word for a meaning hint. Sentence replay uses generated Norwegian speech.','notice'));const lines=E('div',undefined,s.transcript_help?'':'hidden');lines.id='transcript-lines';renderTranscriptReader(lines);main.append(lines);
+  renderKaraokeTranscript(main);
   main.append(B('Continue to questions →',()=>run(async()=>{if(s.step==='listen')await advance('listening',{mode:played?'played_self_reported':'mock_skip'});else stage=1;}),'primary wide'));
   main.append(E('p',lesson.mode==='generated'&&studioYoutubeId?(played?'You marked the YouTube segment as listened; playback is not verified.':'Listen to the YouTube segment or continue without it.'):(played?'Audio played.':'You may continue without listening; the recap will record that audio was skipped.'),'notice'));
  }else if(stage===1){
@@ -418,15 +477,18 @@ function render(){
   const messages=[{role:'Partner',text:s.opening}];for(const turn of s.turns)messages.push({role:'You',text:turn.learner_text},{role:'Partner',text:turn.result.partner_text});
   for(const m of messages){const row=E('div',undefined,'bubble'+(m.role==='You'?' user':''));row.append(E('small',m.role),E('div',m.text));if(m.role==='Partner')row.append(B('▶ Hear reply',()=>play(m.text)));log.append(row);}main.append(log);
   if(s.last_correction){const c=s.last_correction;main.append(E('div',`${c.original} → ${c.suggestion}. ${c.explanation}`,'feedback'));}
-  const form=E('form'),input=E('textarea');input.value=draft;input.maxLength=2000;input.placeholder='Speak, confirm the transcript, then send. Or type your reply.';input.setAttribute('aria-label','Your reply');input.oninput=()=>draft=input.value;form.append(input);
-  const send=B('Confirm & send',()=>{},'primary dark',s.completed);send.type='submit';form.append(send);form.onsubmit=e=>{e.preventDefault();if(!draft.trim())return;run(async()=>{await advance('turns',{text:draft,input_mode:inputMode});draft='';inputMode='typed';},'Your conversation partner is thinking…');};main.append(form,E('p','Grammar feedback appears after you send a reply when the local Ollama conversation model is enabled. Speech recognition alone does not check grammar.','notice'));
-  const mic=B(recording?'■ Stop recording':'◉ Speak Norwegian',record,'chip'+(recording?' recording':''),s.completed||capabilities.transcription==='not_configured');mic.disabled=busy||s.completed||!!api.pending||capabilities.transcription==='not_configured';main.append(mic);
-  const label=E('label',' Or choose an audio clip: ','notice'),file=E('input');file.type='file';file.accept='audio/*';file.disabled=busy||s.completed;file.onchange=()=>{if(file.files[0])transcribeBlob(file.files[0]);};label.append(file);main.append(label,E('p','Recording stops after 60 seconds. Audio goes through your backend; Hosted mode uploads the selected audio to NB’s demo. Local temporary audio is discarded after transcription; the text you confirm is saved with the lesson.','notice'));
-  main.append(B(s.completed?'View recap →':'Finish & see recap →',()=>run(async()=>{if(s.completed)stage=5;else await advance('complete');}),'primary wide',!s.turns.length||recording));
+  if(s.completed){main.append(E('div','This conversation has ended. Your lesson progress is saved. Start a fresh role-play to keep speaking; the old dialogue will remain in your saved history.','callout'),B('Start a fresh role-play →',()=>run(async()=>{await advance('roleplay/restart');draft='';inputMode='typed';},'Starting a fresh conversation…'),'primary dark wide'));return;}
+  const composer=E('section',undefined,'roleplay-composer');composer.append(E('label','Your turn','reader-speaker'));
+  const toolbar=E('div',undefined,'roleplay-toolbar'),mic=B(recording?'■ Stop recording':'🎙 Speak Norwegian',record,'chip'+(recording?' recording':''),s.completed||capabilities.transcription==='not_configured');mic.disabled=busy||s.completed||!!api.pending||capabilities.transcription==='not_configured';toolbar.append(mic);
+  const fileLabel=E('label','Or choose audio ' ,'notice'),file=E('input');file.type='file';file.accept='audio/*';file.disabled=busy||s.completed;file.onchange=()=>{if(file.files[0])transcribeBlob(file.files[0]);};fileLabel.append(file);toolbar.append(fileLabel);composer.append(toolbar);
+  const input=E('textarea');input.value=draft;input.maxLength=2000;input.placeholder='Your Norwegian reply; edit the transcript if needed.';input.setAttribute('aria-label','Your reply');input.oninput=()=>{draft=input.value;send.disabled=s.completed||!draft.trim();};composer.append(input);
+  const form=E('form',undefined,'roleplay-form'),send=B('Send your turn →',()=>{},'primary dark',s.completed||!draft.trim());send.type='submit';form.append(send);form.onsubmit=e=>{e.preventDefault();if(!draft.trim())return;run(async()=>{await advance('turns',{text:draft,input_mode:inputMode});draft='';inputMode='typed';},'Your conversation partner is thinking…');};composer.append(form);
+  const turnsToFinish=Math.max(0,3-s.turns.length);composer.append(E('p','Review the recognized words, then send. Your partner should answer and move the scenario forward.','notice'),B(turnsToFinish?`Keep talking · ${s.turns.length}/3 turns`:'End role-play & see recap →',()=>run(async()=>{await advance('complete');}),'chip wide',turnsToFinish>0||recording));main.append(composer);
  }else{
   main.append(E('h2','Look what you did!'),E('p',`${s.review.filter(r=>r.is_correct).length}/${lesson.questions.length} correct · ${s.practised.length} marked practised · ${s.used.length} phrases matched.`),E('p',`${s.turns.length} replies saved. ${s.listening_mode==='mock_skip'?'Audio was skipped.':'Playback was self-reported.'} ${s.transcript_help?'Transcript help used.':''}`,'notice'));
   main.append(E('p','Phrase matches are literal text checks. There is no pronunciation or overall proficiency score.','notice'));
   for(const p of lesson.phrases){const row=E('div',undefined,'phrase');row.append(E('span',p.text));addSave(row,p);main.append(row);}
+  if(s.roleplay_started)main.append(B('Start a fresh role-play →',()=>run(async()=>{await advance('roleplay/restart');draft='';inputMode='typed';},'Starting a fresh conversation…'),'primary dark wide'));
   main.append(B('Start another lesson →',()=>run(async()=>{await api.create(lesson.id);syncStage();draft='';answers={};played=false;}),'primary dark wide'));
  }
 }

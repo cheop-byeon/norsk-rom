@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 import hmac
 from typing import Annotated, Literal
-from uuid import UUID, uuid5, NAMESPACE_URL
+from uuid import UUID, uuid4, uuid5, NAMESPACE_URL
 import hashlib
 import json
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Response, Request
@@ -17,10 +17,8 @@ from .database import Base, LessonSession, SavedPhrase, SavedWord, MediaJob, Gen
 from .fixtures import LESSON, LESSON_ID, PHRASES, lesson_public
 from .providers import MockConversation
 from .live import OllamaConversation, LocalSpeech, ProviderFailure
-from .remote_asr import transcribe_remote, group_practice_clips
 from .pronunciation import compare_phrase
-from .remote_speech import MossNanoSpeech, VoxCPMSpeech
-from .schemas import CreateSession, Mutation, Listening, Answers, Practice, Turn, CreateJob, SessionView, JobView, Synthesis, GenerateLesson, ImportURL, YouTubeTranscriptRequest, SaveWord, UpdateWord
+from .schemas import CreateSession, Mutation, Listening, Answers, Practice, Turn, CreateJob, SessionView, JobView, Synthesis, GenerateLesson, ImportURL, YouTubeTranscriptRequest, SaveWord, UpdateWord, SourceTranscript
 from .service import Lessons, owned, view, recap
 from .jobs import enqueue, job_owned, job_view
 from .catalogue import get_lesson, public_lesson, find_phrase
@@ -56,7 +54,7 @@ def create_app(settings: Settings | None = None, conversation=None):
         raise HTTPException(401, 'Valid bearer token required', headers={'WWW-Authenticate':'Bearer'})
     User = Annotated[str, Depends(user)]
     provider = conversation or (OllamaConversation(settings.ollama_model) if settings.conversation_mode=='ollama' else MockConversation())
-    speech = ({'nb_moss_nano_space':MossNanoSpeech,'nb_voxcpm_space':VoxCPMSpeech}.get(settings.tts_provider,LocalSpeech))(settings.asr_path,settings.tts_path)
+    speech = LocalSpeech(settings.asr_path,settings.tts_path)
     service = Lessons(factory, provider)
     app.state.speech=speech
     api = APIRouter(prefix='/v1')
@@ -68,7 +66,7 @@ def create_app(settings: Settings | None = None, conversation=None):
     @api.get('/capabilities')
     def capabilities(owner: User):
         return {'conversation':getattr(provider,'name','mock-cafe-v1'), **speech.capabilities(),
-                'transcription_options':['local','nb_hosted'], 'pronunciation':'transcript_comparison_hint', 'media_processing':'short_clips_and_bounded_hosted_long_recordings', 'exercise_generation':settings.ollama_model if settings.conversation_mode=='ollama' else 'not_configured', 'auth':'local_bearer_keys',
+                'transcription_options':['local'], 'pronunciation':'transcript_comparison_hint', 'media_processing':'on_device_clips_up_to_90_seconds', 'exercise_generation':settings.ollama_model if settings.conversation_mode=='ollama' else 'not_configured', 'auth':'local_bearer_keys',
                 'supported_levels':['A2'], 'generation_target_levels':['A1','A2','B1','B2','C1','C2'], 'persistence':'sqlalchemy', 'supabase_auth':'not_connected'}
 
 
@@ -90,7 +88,71 @@ def create_app(settings: Settings | None = None, conversation=None):
             return {'lesson_id':lesson_id,'lines':doc['lines'],
                     'playback_text':doc.get('playback_text',' '.join(l['text'] for l in doc['lines'])),
                     'mode':'generated' if doc.get('generated') else 'authored_fixture',
-                    'source_segments':doc.get('source_segments',[]),'source_id':doc.get('source_id','')}
+                    'source_audio':bool(doc.get('source_audio')),
+                    'source_segments':doc.get('source_segments',[]),
+                    'source_transcript_segments':doc.get('source_transcript_segments',[]),
+                    'source_id':doc.get('source_id','')}
+
+    @api.put('/lessons/{lesson_id}/source-transcript')
+    def attach_source_transcript(lesson_id: str, body: SourceTranscript, owner: User):
+        with factory() as db:
+            row=db.get(GeneratedLesson,lesson_id)
+            if not row or row.owner!=owner:raise HTTPException(404,'Generated lesson not found.')
+            doc=dict(row.document)
+            doc['source_transcript_segments']=[segment.model_dump() for segment in body.segments]
+            row.document=doc
+            db.commit()
+        return {'lesson_id':lesson_id,'sentences_source_segments':len(body.segments)}
+
+    @api.put('/lessons/{lesson_id}/source-audio')
+    async def attach_source_audio(lesson_id: str, request: Request, owner: User):
+        media_type=request.headers.get('content-type','').split(';',1)[0].strip().lower()
+        if not (media_type.startswith('audio/') or media_type.startswith('video/')):
+            raise HTTPException(415,'Choose an audio or video file.')
+        data=bytearray()
+        async for chunk in request.stream():
+            data.extend(chunk)
+            if len(data)>100*1024*1024:
+                raise HTTPException(413,'Source media must be 100 MB or smaller.')
+        if not data:raise HTTPException(422,'Send the original source file.')
+        with factory() as db:
+            row=db.get(GeneratedLesson,lesson_id)
+            if not row or row.owner!=owner:raise HTTPException(404,'Generated lesson not found.')
+            source_audio_id=str(uuid4())
+            media_dir=Path(__file__).resolve().parents[1]/'.data'/'source_audio'
+            media_dir.mkdir(parents=True,exist_ok=True)
+            path=media_dir/(source_audio_id+'.media')
+            path.write_bytes(data)
+            try:path.chmod(0o600)
+            except OSError:pass
+            doc=dict(row.document)
+            old_audio=doc.get('source_audio') or {}
+            doc['source_audio']={'id':source_audio_id,'media_type':media_type}
+            row.document=doc
+            try:db.commit()
+            except Exception:
+                path.unlink(missing_ok=True)
+                raise
+            old_id=old_audio.get('id')
+            if old_id and old_id!=source_audio_id and str(old_id).replace('-','').isalnum():
+                (media_dir/(str(old_id)+'.media')).unlink(missing_ok=True)
+        return {'lesson_id':lesson_id,'source_audio':True,'media_type':media_type}
+
+    @api.get('/lessons/{lesson_id}/source-audio')
+    def get_source_audio(lesson_id: str, owner: User):
+        with factory() as db:
+            row=db.get(GeneratedLesson,lesson_id)
+            if not row or row.owner!=owner:raise HTTPException(404,'Generated lesson not found.')
+            media=row.document.get('source_audio') or {}
+            media_id=media.get('id','')
+            if not isinstance(media_id,str) or not media_id.replace('-','').isalnum():
+                raise HTTPException(404,'This lesson has no saved source audio.')
+            path=Path(__file__).resolve().parents[1]/'.data'/'source_audio'/(media_id+'.media')
+            if not path.is_file():raise HTTPException(404,'The saved source audio is unavailable.')
+            media_type=media.get('media_type','audio/mpeg')
+            if not (media_type.startswith('audio/') or media_type.startswith('video/')):
+                media_type='application/octet-stream'
+            return FileResponse(path,media_type=media_type,headers={'Cache-Control':'private, no-store'})
 
     @api.post('/studio/lessons',status_code=201)
     def generate(body: GenerateLesson, owner: User):
@@ -209,6 +271,10 @@ def create_app(settings: Settings | None = None, conversation=None):
     def roleplay(session_id: UUID, body: Mutation, owner: User):
         return service.start_roleplay(owner, session_id, body)
 
+    @api.post('/sessions/{session_id}/roleplay/restart', response_model=SessionView)
+    def restart_roleplay(session_id: UUID, body: Mutation, owner: User):
+        return service.restart_roleplay(owner, session_id, body)
+
     @api.post('/sessions/{session_id}/turns', response_model=SessionView)
     def turn(session_id: UUID, body: Turn, owner: User):
         return service.turn(owner, session_id, body)
@@ -323,11 +389,11 @@ def create_app(settings: Settings | None = None, conversation=None):
 
     @api.post('/speech/synthesize')
     def synthesize(body: Synthesis, owner: User):
-        audio = speech.synthesize(body.text,body.voice,body.pace) if settings.tts_provider=='nb_voxcpm_space' else speech.synthesize(body.text)
+        audio = speech.synthesize(body.text)
         return Response(audio,media_type='audio/wav',headers={'Cache-Control':'no-store','X-Speech-Provider':settings.tts_provider})
 
     @api.post('/speech/transcribe')
-    async def transcribe(request: Request, owner: User, provider: Literal['local','nb_hosted'] = 'local', start: float = Query(default=0,ge=0,le=3600), end: float | None = Query(default=None,gt=0,le=3690)):
+    async def transcribe(request: Request, owner: User, provider: Literal['local'] = 'local', start: float = Query(default=0,ge=0,le=3600), end: float | None = Query(default=None,gt=0,le=3690)):
         if end is not None and not 0.25<=end-start<=90:
             raise HTTPException(422,"Select a clip between 0.25 and 90 seconds.")
         data=bytearray()
@@ -338,12 +404,12 @@ def create_app(settings: Settings | None = None, conversation=None):
         if not data:
             raise HTTPException(422,'Send audio bytes in the request body.')
         try:
-            return await run_in_threadpool(transcribe_remote if provider=='nb_hosted' else speech.transcribe,bytes(data),start,end)
+            return await run_in_threadpool(speech.transcribe,bytes(data),start,end)
         except ValueError as exc:
             raise HTTPException(422,str(exc))
 
     @api.post('/speech/pronunciation-check')
-    async def pronunciation_check(request: Request, owner: User, target: str = Query(...,min_length=1,max_length=200), provider: Literal['local','nb_hosted'] = 'local'):
+    async def pronunciation_check(request: Request, owner: User, target: str = Query(...,min_length=1,max_length=200), provider: Literal['local'] = 'local'):
         """Offer a transcript comparison hint for a learner rehearsing a phrase."""
         data=bytearray()
         async for chunk in request.stream():
@@ -351,24 +417,9 @@ def create_app(settings: Settings | None = None, conversation=None):
             if len(data)>12*1024*1024:raise HTTPException(413,'Practice audio must be smaller than 12 MB.')
         if not data:raise HTTPException(422,'Record the phrase before checking it.')
         try:
-            transcribed=await run_in_threadpool(transcribe_remote if provider=='nb_hosted' else speech.transcribe,bytes(data),0,None)
+            transcribed=await run_in_threadpool(speech.transcribe,bytes(data),0,None)
             if not isinstance(transcribed,dict):raise ValueError('Speech recognizer returned an invalid result.')
             return compare_phrase(target,transcribed.get('text',''))
-        except ValueError as exc:raise HTTPException(422,str(exc))
-
-    @api.post('/speech/transcribe-long')
-    async def transcribe_long(request: Request, owner: User, end: float = Query(...,gt=0.25,le=1800)):
-        """Transcribe a bounded local recording with NB hosted Whisper and return practice clips."""
-        data=bytearray()
-        async for chunk in request.stream():
-            data.extend(chunk)
-            if len(data)>50*1024*1024:
-                raise HTTPException(413,'Hosted long recordings must be 50 MB or smaller.')
-        if not data:raise HTTPException(422,'Send an audio or video file in the request body.')
-        try:
-            result=await run_in_threadpool(transcribe_remote,bytes(data),0,end,timestamps=True,max_duration=1800)
-            result['clips']=group_practice_clips(result.get('segments',[]))
-            return result
         except ValueError as exc:raise HTTPException(422,str(exc))
 
     # Explicit public asset allowlist: never expose backend files, keys or databases.
@@ -389,7 +440,7 @@ def create_app(settings: Settings | None = None, conversation=None):
 
     @app.get('/app/{filename}',include_in_schema=False)
     def asset(filename: str):
-        if filename not in {'connected.js','api-client.js','connected.css'}:
+        if filename not in {'connected.js','api-client.js','connected.css','reader.js'}:
             raise HTTPException(404,'Not found')
         return FileResponse(frontend/filename,headers={'Cache-Control':'no-store'})
 

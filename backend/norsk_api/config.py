@@ -18,8 +18,8 @@ class Settings:
     tts_provider: str = 'piper'
 
     def __post_init__(self):
-        if self.tts_provider not in ('piper','nb_moss_nano_space','nb_voxcpm_space'):
-            raise ValueError('Unknown TTS provider')
+        if self.tts_provider != 'piper':
+            raise ValueError('Only local Piper text-to-speech is supported; hosted speech providers are disabled.')
         if self.conversation_mode not in ('mock','ollama'):
             raise ValueError('Unknown conversation provider')
         if not self.api_keys or any(not isinstance(k, str) or len(k) < 32 or not isinstance(v, str) or not v.strip() for k, v in self.api_keys.items()):
@@ -29,7 +29,7 @@ class Settings:
 
     @classmethod
     def from_env(cls):
-        local = ROOT / '.local-config.json'
+        local = ROOT / 'norsk-rom-local-config.json'
         config = json.loads(local.read_text()) if local.exists() else {}
         keys = json.loads(os.environ['NORSK_API_KEYS']) if 'NORSK_API_KEYS' in os.environ else config.get('api_keys', {})
         return cls(database_url=os.environ.get('NORSK_DATABASE_URL', cls.__dataclass_fields__['database_url'].default),

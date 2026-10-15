@@ -1,5 +1,6 @@
 .venv/
 .local-config.json
+norsk-rom-local-config.json
 .env
 .data/
 __pycache__/

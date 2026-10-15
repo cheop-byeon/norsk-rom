@@ -26,7 +26,7 @@ def test_pronunciation_endpoint_uses_selected_transcriber(tmp_path,monkeypatch):
         result=response.json()
         assert result['differences']==[{'target':['ha'],'heard':[]}]
         assert calls==[(b'audio',0,None)]
-        assert client.post('/v1/speech/pronunciation-check?target=Hei&provider=unknown',content=b'audio').status_code==422
+        assert client.post('/v1/speech/pronunciation-check?target=Hei&provider=nb_hosted',content=b'audio').status_code==422
         assert client.post('/v1/speech/pronunciation-check?target=hi').status_code==422
 
 

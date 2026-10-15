@@ -182,6 +182,23 @@ def test_completion_lock_and_receipt_deletion(setup):
         assert db.scalar(select(ActionReceipt).where(ActionReceipt.session_id==s['id'])) is None
 
 
+def test_completed_roleplay_can_restart_without_losing_quiz_or_dialogue_history(setup):
+    c, _, _ = setup
+    s=to_roleplay(c)
+    s=action(c,s,'turns',text='Hei, jeg liker regnet.')
+    old_turns=s['state']['turns']
+    s=action(c,s,'complete')
+    restarted=action(c,s,'roleplay/restart')
+    assert restarted['state']['completed'] is False
+    assert restarted['state']['step']=='roleplay'
+    assert restarted['state']['turns']==[]
+    assert restarted['state']['archived_roleplays'][0]['turns']==old_turns
+    assert restarted['state']['answers']==s['state']['answers']
+    continued=action(c,restarted,'turns',text='Hva anbefaler du?')
+    assert len(continued['state']['turns'])==1
+    assert continued['state']['archived_roleplays'][0]['turns']==old_turns
+
+
 def test_phrase_saves_are_idempotent_and_private(setup):
     c, _, _ = setup
     for _ in range(2):assert c.put('/v1/phrases/p1').status_code == 200

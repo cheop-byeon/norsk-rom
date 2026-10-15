@@ -84,6 +84,9 @@ class SourceSegment(Input):
             raise ValueError('Source segment end must be after its start.')
         return self
 
+class SourceTranscript(Input):
+    segments: list[SourceSegment] = Field(min_length=1, max_length=300)
+
 class GenerateLesson(Input):
     text: Annotated[str,StringConstraints(strip_whitespace=True,min_length=30,max_length=4000)]
     level: Literal['A1','A2','B1','B2','C1','C2'] = 'A2'

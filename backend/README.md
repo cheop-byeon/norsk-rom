@@ -6,7 +6,7 @@ A runnable FastAPI backend for the connected A2 café lesson. It persists actual
 
 **Implemented:** authenticated API, durable lesson sessions, controlled step progression, idempotency, optimistic concurrency, private phrasebooks, deletion, OpenAPI docs, and a separate durable **demo-only** lesson-preparation worker.
 
-**Current speech/media flow:** local NB-Whisper handles short clips. Optional Hosted NB-Whisper uploads selected clips to NB's public Hugging Face Space; its full-recording endpoint accepts local files up to 50 MB and 30 minutes, then returns timestamped practice clips. Install optional dependencies with `pip install -e '.[hosted]'`. The public Space is currently paused, so remote transcription is unavailable until it resumes. Speech recognition never falls back between local and hosted providers silently. Pronunciation assessment is not implemented, and the demo worker still prepares authored fixtures rather than processing media.
+**Current speech/media flow:** local NB-Whisper Large handles clips up to 90 seconds with beam search (MPS on supported Apple Silicon; CPU otherwise). Hosted speech providers are disabled. Piper text-to-speech runs locally. The local lesson flow retains the original recording, transcript segments and generated listening questions. It requires the backend process to run on the same computer for this prototype; mobile still needs an on-device implementation. Pronunciation assessment is not implemented, and the demo worker still prepares authored fixtures rather than processing media.
 
 ## Run locally
 
@@ -26,7 +26,7 @@ python init_dev.py
 - OpenAPI: http://127.0.0.1:8000/openapi.json
 - Health: http://127.0.0.1:8000/health
 
-`init_dev.py` creates a private `.local-config.json` containing a random development API key mapped to `local-learner`. It never overwrites an existing key. Open that local file and paste the key into **Authorize** in `/docs`. Send `Authorization: Bearer <key>` with API requests. Do not commit or share the config file. The source archive excludes it.
+`init_dev.py` creates a private `norsk-rom-local-config.json` containing a random development API key mapped to `local-learner`. It never overwrites an existing key. Open that local file and paste the key into **Authorize** in `/docs`. Send `Authorization: Bearer <key>` with API requests. Do not commit or share the config file. The source archive excludes it.
 
 The server defaults to a persistent SQLite database at `.data/norsk.db`. Restarting the process preserves sessions. This is local development authentication, **not Supabase login**. No cloud account or paid AI service is required.
 

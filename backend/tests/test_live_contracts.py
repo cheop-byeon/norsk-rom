@@ -5,11 +5,63 @@ from fastapi.testclient import TestClient
 from norsk_api.main import create_app
 from norsk_api.config import Settings
 from norsk_api.fixtures import LESSON
-from norsk_api.live import ProviderFailure
+from norsk_api.live import LocalSpeech, OllamaConversation, ProviderFailure
 from norsk_api.generate import DraftLesson, validate_draft, generate_lesson
 
 KEY='a'*40
 OTHER='b'*40
+
+
+def test_local_speech_reports_sharded_nb_whisper_large(tmp_path):
+    model_path=tmp_path/'nb-whisper-large'
+    model_path.mkdir()
+    (model_path/'model.safetensors.index.json').write_text('{}')
+    speech=LocalSpeech(str(model_path))
+    assert speech.capabilities()['transcription']=='NbAiLab/nb-whisper-large (local)'
+
+
+def test_hosted_tts_configuration_is_rejected():
+    with pytest.raises(ValueError,match='Only local Piper'):
+        Settings(api_keys={KEY:'alice'},tts_provider='nb_voxcpm_space')
+
+
+def test_ollama_exact_echo_is_replaced_with_a_conversational_followup(monkeypatch):
+    import json
+    import norsk_api.live as module
+    class Response:
+        def raise_for_status(self): pass
+        def json(self): return {'message': {'content': json.dumps({'partner_text':'Det bøtter ned!','correction':None})}}
+    class Client:
+        def __init__(self,**kwargs): pass
+        def __enter__(self): return self
+        def __exit__(self,*args): pass
+        def post(self,*args,**kwargs): return Response()
+    monkeypatch.setattr(module.httpx,'Client',Client)
+    result=OllamaConversation().reply('Det bøtter ned.',[])
+    assert result.partner_text=='Det skjønner jeg. Kan du fortelle litt mer?'
+
+
+def test_ollama_prompt_interprets_asr_text_as_a_clue_and_uses_correct_bokmal(monkeypatch):
+    import json
+    import norsk_api.live as module
+    requests=[]
+    class Response:
+        def raise_for_status(self): pass
+        def json(self): return {'message': {'content': json.dumps({'partner_text':'Skjønner. Hva vil du gjøre?', 'correction':None})}}
+    class Client:
+        def __init__(self,**kwargs): pass
+        def __enter__(self): return self
+        def __exit__(self,*args): pass
+        def post(self,*args,**kwargs): requests.append(kwargs['json']);return Response()
+    monkeypatch.setattr(module.httpx,'Client',Client)
+    lesson={'generated':True,'level':'A2','roleplay_context':'Snakk om været og regn.',
+            'phrases':[{'text':'det bøtter ned'}]}
+    OllamaConversation().reply('Jeg skal kjøpe en ny skydebue.',[],lesson)
+    system=requests[0]['messages'][0]['content'].casefold()
+    assert 'imperfect speech-recognition transcript' in system
+    assert 'intended meaning' in system
+    assert 'correct, natural standard bokmål' in system
+    assert 'if the meaning is unclear' in system
 
 @pytest.fixture
 def client(tmp_path):
@@ -67,6 +119,69 @@ def test_generated_lesson_keeps_timed_source_segments(client,monkeypatch):
     assert script['source_segments']==[segment]
     invalid={**body,'request_id':str(uuid4()),'source_segments':[{**segment,'end':segment['start']}]}
     assert c.post('/v1/studio/lessons',json=invalid).status_code==422
+
+
+def test_generated_lesson_can_store_private_full_source_transcript(client,monkeypatch):
+    c,_=client
+    monkeypatch.setattr('norsk_api.main.generate_lesson',lambda *args:{**deepcopy(LESSON),'generated':True})
+    body={'text':'Dette er en norsk tekst som brukes i en test.','level':'A2','source_kind':'audio transcript','request_id':str(uuid4())}
+    lesson=c.post('/v1/studio/lessons',json=body).json();lid=lesson['id']
+    segments=[{'start':0,'end':25,'text':'Hei, dette er en øvelse.','timestamp_quality':'local_chunk'}]
+    attached=c.put(f'/v1/lessons/{lid}/source-transcript',json={'segments':segments})
+    assert attached.status_code==200,attached.text
+    assert c.get(f'/v1/lessons/{lid}/script').json()['source_transcript_segments']==segments
+    assert c.get(f'/v1/lessons/{lid}/script',headers={'Authorization':'Bearer '+OTHER}).status_code==404
+    assert c.put(f'/v1/lessons/{lid}/source-transcript',json={'segments':[{**segments[0],'end':0}]}).status_code==422
+
+
+def test_generated_lesson_can_keep_and_replay_original_source_audio(client,monkeypatch):
+    c,app=client
+    monkeypatch.setattr('norsk_api.main.generate_lesson',lambda *args:{**deepcopy(LESSON),'generated':True})
+    body={'text':'Dette er en norsk tekst som brukes i en test.','level':'A2','source_kind':'audio transcript','request_id':str(uuid4())}
+    lesson=c.post('/v1/studio/lessons',json=body).json();lid=lesson['id']
+    audio=b'fake-mp3-source-bytes'
+    attached=c.put(f'/v1/lessons/{lid}/source-audio',content=audio,headers={'Content-Type':'audio/mpeg'})
+    assert attached.status_code==200,attached.text
+    assert c.get(f'/v1/lessons/{lid}/script').json()['source_audio'] is True
+    fetched=c.get(f'/v1/lessons/{lid}/source-audio')
+    assert fetched.status_code==200
+    assert fetched.headers['content-type']=='audio/mpeg'
+    assert fetched.content==audio
+    assert c.get(f'/v1/lessons/{lid}/source-audio',headers={'Authorization':'Bearer '+OTHER}).status_code==404
+    assert c.put(f'/v1/lessons/{lid}/source-audio',content=b'nope',headers={'Content-Type':'text/plain'}).status_code==415
+
+
+def test_on_device_audio_to_lesson_flow(client,monkeypatch):
+    c,app=client
+    transcript='Det bøtter ned i Oslo i dag. Mange tar bussen til jobb.'
+    monkeypatch.setattr(app.state.speech,'transcribe',lambda data,start,end:{
+        'text':transcript,'segments':[{'start':start,'end':end,'text':transcript,'timestamp_quality':'local_chunk'}],
+        'provider':'NbAiLab/nb-whisper-large','processing':'local','requires_confirmation':True,
+    })
+    def generate(text,level,source_kind,model):
+        assert text==transcript and level=='A2' and source_kind=='audio transcript'
+        return {**deepcopy(LESSON),'generated':True,'title':'Det bøtter ned','playback_text':text,
+                'lines':[{'id':'source','speaker':'Source','text':text}]}
+    monkeypatch.setattr('norsk_api.main.generate_lesson',generate)
+
+    audio=b'local audio bytes'
+    recognized=c.post('/v1/speech/transcribe?start=0&end=12',content=audio,headers={'Content-Type':'audio/wav'})
+    assert recognized.status_code==200 and recognized.json()['processing']=='local'
+    created=c.post('/v1/studio/lessons',json={
+        'text':recognized.json()['text'],'level':'A2','source_kind':'audio transcript',
+        'source_segments':recognized.json()['segments'],'request_id':str(uuid4()),
+    })
+    assert created.status_code==201,created.text
+    lesson_id=created.json()['id']
+    assert c.put(f'/v1/lessons/{lesson_id}/source-audio',content=audio,headers={'Content-Type':'audio/wav'}).status_code==200
+    script=c.get(f'/v1/lessons/{lesson_id}/script').json()
+    assert script['source_audio'] is True
+    assert script['source_segments']==recognized.json()['segments']
+    assert script['playback_text']==transcript
+    assert c.get(f'/v1/lessons/{lesson_id}/source-audio').content==audio
+    caps=c.get('/v1/capabilities').json()
+    assert caps['transcription_options']==['local']
+    assert caps['media_processing']=='on_device_clips_up_to_90_seconds'
 
 
 def test_provider_errors_and_asset_allowlist(client,monkeypatch):

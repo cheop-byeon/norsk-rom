@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import secrets
 
-path = Path(__file__).resolve().parent / '.local-config.json'
+path = Path(__file__).resolve().parent / 'norsk-rom-local-config.json'
 try:
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
 except FileExistsError:
@@ -13,4 +13,4 @@ else:
     with os.fdopen(fd, 'w') as f:
         json.dump({'api_keys': {secrets.token_urlsafe(32): 'local-learner'}}, f, indent=2)
         f.write('\n')
-    print('Created .local-config.json (private). Use its API key as your Bearer token in /docs.')
+    print('Created norsk-rom-local-config.json (private). Use its API key as your Bearer token in /docs.')

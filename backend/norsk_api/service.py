@@ -50,7 +50,7 @@ class Lessons:
                 return view(owned(db, owner, sid))
             return view(row)
 
-    def mutate(self, owner, sid, body: Mutation, action, apply):
+    def mutate(self, owner, sid, body: Mutation, action, apply, allow_completed=False):
         payload = body.model_dump(mode='json', exclude={'revision','request_id'})
         fingerprint = hashlib.sha256(json.dumps({'action': action, 'payload': payload}, sort_keys=True).encode()).hexdigest()
         rid = str(body.request_id)
@@ -61,7 +61,7 @@ class Lessons:
                 require(old.fingerprint == fingerprint, 'request_id was already used for a different action or payload')
                 return old.response
             require(row.revision == body.revision, 'Revision conflict. Fetch the current session and retry with its revision.')
-            require(not row.state['completed'], 'Session is complete. Start a new session to practise again.')
+            require(allow_completed or not row.state['completed'], 'Session is complete. Start a new session to practise again.')
             require(row.state['action_count'] < 250, 'Session action limit reached. Start a new session.')
             state = deepcopy(row.state)
             doc=get_lesson(db,owner,row.lesson_id)
@@ -123,6 +123,20 @@ class Lessons:
             s['opening'] = doc['opening']
             s['step'] = 'roleplay'
         return self.mutate(owner, sid, body, 'start_roleplay', apply)
+
+    def restart_roleplay(self, owner, sid, body):
+        def apply(s,doc):
+            require(s['roleplay_started'] and s['completed'], 'Finish the current role-play before starting a fresh one.')
+            archives=s.setdefault('archived_roleplays',[])
+            archives.append({'opening':s.get('opening',''),'turns':deepcopy(s.get('turns',[])),
+                             'last_correction':deepcopy(s.get('last_correction')),'archived_at':now()})
+            s['archived_roleplays']=archives[-10:]
+            s['turns']=[]
+            s['last_correction']=None
+            s['opening']=doc['opening']
+            s['completed']=False
+            s['step']='roleplay'
+        return self.mutate(owner,sid,body,'restart_roleplay',apply,allow_completed=True)
 
     def turn(self, owner, sid, body):
         def apply(s,doc):

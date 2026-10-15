@@ -8,7 +8,7 @@ Norsk Rom is **on-device only**. Treat this decision as authoritative over any o
 
 Internet access is limited to learner-requested actions such as obtaining app/model files or opening a permitted media source. Process imported media and learner data on the same device. A model download is not an inference API call. Source restrictions, licensing and platform access controls still apply. If a source cannot be fetched directly on-device, offer a permitted file/caption import path; do not add a server proxy. Make every online transfer explicit in the UI.
 
-The current connected prototype is not yet compliant: its FastAPI service runs on the developer's computer, the configured Opplest/VoxCPM2 speech path uses a public Hugging Face Space, and optional hosted speech integrations remain in the code. Treat these as migration work, not target architecture. Never claim the mobile app is fully on-device until each active model and data flow has passed an offline, on-device test.
+The connected prototype is not yet fully on-device: its FastAPI service runs locally on the developer's computer, but hosted speech routes and provider choices have been disabled. Active model inference and app data use local components. Treat the helper service and the older mobile prototype as migration work, not target architecture. Never claim the mobile app is fully on-device until each active model and data flow has passed an offline, on-device test.
 
 ---
 
@@ -55,7 +55,7 @@ The local database should record source-relative timestamps, transcript alignmen
 ### Implementation order
 
 1. Audit every current network call and label it local-device, user-requested source access, model download, or prohibited remote processing.
-2. Keep the current web workflow running locally while replacing hosted speech integrations with local model adapters and adding a reliable offline mode.
+2. Keep the current web workflow local and add offline tests; hosted speech routes are disabled, while user-requested source URL imports still require internet access.
 3. Move lesson state, saved expressions and media metadata into local persistence with export/import backup.
 4. Build the mobile client and select model sizes that run locally on representative phones; add model download, storage, deletion and compatibility checks.
 5. Test an airplane-mode end-to-end lesson on desktop web and real iOS/Android devices before calling either version on-device.
@@ -218,10 +218,8 @@ The primary learner experience is one coherent session: selected clip → listen
 
 ## Current state and migration truth — 15 October 2026
 
-The connected browser app currently calls a local FastAPI service and stores data in a local SQLite database. ASR and conversation models run on the computer hosting that service. The current machine's Opplest/VoxCPM2 TTS configuration and optional hosted speech integrations use remote Hugging Face Spaces. The Expo `App.js` remains an earlier prototype and is not connected to the current lesson flow. This is a local-computer prototype, not yet a fully on-device web/mobile product. Keep this distinction visible in setup and UI. Migration work must remove remote model calls, move inference and persistence onto each target device, and pass offline tests before release.
+The connected browser app calls a local FastAPI service and stores data in a local SQLite database. ASR, conversation, lesson generation and TTS are configured for local inference; hosted speech routes and provider choices are disabled. The service still runs as a helper on the computer, so browser inference and data are not yet self-contained in the browser. The Expo `App.js` remains an earlier prototype and is not connected to the current lesson flow. This is not yet a fully on-device web/mobile product. Keep this distinction visible in setup and UI. The next migration work should run inference and persistence directly on each target device and pass offline tests before release.
 
 
 ## Existing connected prototype status — 14 October 2026
-The runnable web frontend is `connected.html` served by the local FastAPI helper at `/app/`, with `api-client.js` and `connected.js`. It currently provides the listening → questions → evidence → expressions → role-play → recap flow, local SQLite persistence, local NB-Whisper and Borealis inference on the computer, and a configured remote Opplest/VoxCPM2 TTS path. Optional hosted speech integrations also remain in the backend. The React Native `App.js` is an earlier prototype and does not yet provide feature parity. These are migration gaps: target releases must run every model and save all learner data locally on the user's own computer or phone. See CONNECTED_APP.md for exact current behavior and limitations.
-
-Current voice update: NB Opplest/VoxCPM2 is active through its public Hugging Face Space (`nb_voxcpm_space`). Speech text is remote; ASR and conversation stay local. Do not claim fully local synthesis with this provider. MOSS Nano remains an optional separate, currently failing endpoint. Preserve clear provider disclosure and explicit failures rather than silently falling back to Piper.
+The runnable web frontend is `connected.html` served by the local FastAPI helper at `/app/`, with `api-client.js` and `connected.js`. It provides the listening → questions → evidence → expressions → role-play → recap flow, local SQLite persistence, local NB-Whisper and Borealis inference, and local Piper TTS. The browser communicates only with the helper for app processing; imports from user-selected internet media remain network-dependent. Hosted speech API routes and UI choices are disabled. The React Native `App.js` is an earlier prototype and does not yet provide feature parity. The next milestone is migrating this tested local lesson flow into desktop and phone native on-device storage/inference. See CONNECTED_APP.md for current behavior and limits.
