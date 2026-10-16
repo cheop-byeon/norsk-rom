@@ -50,9 +50,8 @@ def ollama_model_installed() -> tuple[bool, bool]:
     try:
         with urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=1.5) as response:
             tags = json.load(response).get("models", [])
-        names = {item.get("name", "") for item in tags}
-        short = OLLAMA_MODEL.removeprefix("hf.co/")
-        installed = any(name == OLLAMA_MODEL or name.startswith(short) for name in names)
+        names = {item.get("name", "").split(":", 1)[0] for item in tags}
+        installed = OLLAMA_MODEL.split(":", 1)[0] in names
         return True, installed
     except (OSError, ValueError, urllib.error.URLError):
         return False, False
@@ -72,9 +71,13 @@ def report() -> int:
             print("Private local config: unreadable; rerun setup after preserving a copy")
     else:
         print("Private local config: missing")
-    print(f"Project Python environment: {'OK' if PYTHON.exists() else 'not installed'}")
-    if not PYTHON.exists() and DEV_PYTHON.exists():
-        print("Existing development Python environment: available on this checkout (not included in source archives)")
+    env_available = PYTHON.exists() or DEV_PYTHON.exists()
+    if PYTHON.exists():
+        print("Project Python environment: OK")
+    elif DEV_PYTHON.exists():
+        print("Python environment: existing development environment available for this checkout")
+    else:
+        print("Project Python environment: not installed")
     weights = MODELS / "nb-whisper-large"
     asr_ok = any((weights / name).exists() for name in ("model.safetensors", "model.safetensors.index.json"))
     piper = MODELS / "no_NO-talesyntese-medium.onnx"
@@ -84,19 +87,20 @@ def report() -> int:
     daemon, model = ollama_model_installed() if ollama else (False, False)
     print(f"Ollama command: {'OK' if ollama else 'not installed'}")
     print(f"Ollama service: {'running' if daemon else 'not running'}")
-    print(f"Borealis Open 4B: {'installed' if model else 'not installed / service unavailable'}")
+    model_status = "installed" if model else ("not installed" if daemon else "unknown; Ollama service unavailable")
+    print(f"Borealis Open 4B: {model_status}")
     try:
         free = shutil.disk_usage(ROOT).free
         print(f"Free disk space: {human_size(free)} (allow at least 12 GB before downloading all models)")
     except OSError:
         pass
-    if not PYTHON.exists() or not CONFIG.exists():
+    if not env_available or not CONFIG.exists():
         print("\nFirst setup: python3.12 setup_local.py --install (Python 3.12 is recommended)")
     if not (asr_ok and piper.exists()):
         print("Download NB-Whisper and Piper after setup: python3 setup_local.py --download-speech")
     if not model:
         print("Install Ollama, start its local service, then run: python3 setup_local.py --pull-conversation-model")
-    if py_ok and PYTHON.exists() and CONFIG.exists():
+    if py_ok and env_available and CONFIG.exists():
         if asr_ok and piper.exists() and model:
             print("\nLocal inference prerequisites are ready. Start Norsk Rom with: python3 start_local.py")
         else:
