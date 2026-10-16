@@ -1,6 +1,6 @@
 # Norsk Rom mobile
 
-This Expo / React Native project is the starting point for the Android and iOS apps. It currently contains the earlier scripted practice prototype, local phrase storage, and device text-to-speech. It is not yet connected to the current browser lesson flow or the on-device NB model runtimes.
+This Expo / React Native project is the starting point for the Android and iOS apps. Its **Lesson** tab now provides a mobile version of the browser's six-step authored lesson: listen, answer, review evidence, practise expressions, do a scripted role-play, and see a recap. The app also has the earlier listening samples, role-play scenarios, local phrase storage, and device text-to-speech. Lesson content is a fictional fixture; it is not imported media and it is not yet connected to the on-device NB model runtimes.
 
 ## Run on Android
 
@@ -19,7 +19,8 @@ For an Android phone later, enable Developer options and USB debugging, connect 
 
 ## Current limits
 
-- Role-play replies and speech input are scripted; the microphone is not connected.
-- Listening examples are fictional and spoken by the device's Norwegian TTS voice when available.
+- The six-step lesson and role-play replies are scripted; the microphone is not connected.
+- Listening examples are fictional and spoken by the device's Norwegian TTS voice when available. The lesson transcript follows playback line by line and words offer a small built-in offline hint list.
+- The grammar correction and phrase matching are narrow demo rules, not general Norwegian grammar or pronunciation assessment.
 - Phrasebook data is stored locally with AsyncStorage.
 - NB-Whisper, Borealis, Piper, imported media and generated lessons do not run in this app yet. See [`../MOBILE_MODELS.md`](../MOBILE_MODELS.md) for the planned ASR integration and device checks.
