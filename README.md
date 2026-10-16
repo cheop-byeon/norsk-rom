@@ -39,22 +39,17 @@ python3 -m http.server 8080 --bind 127.0.0.1
 
 Open http://localhost:8080 in a browser. Use a local server: opening index.html directly may block ES-module imports. Browser assets are local; no CDN requests are made. The browser phrasebook uses localStorage, with an in-memory fallback.
 
-## iOS / Android source
+## Android / iOS app
 
-Requires Node.js and an Expo-compatible mobile development environment. Create a fresh **blank JavaScript** Expo project in a separate directory, using the currently supported Expo dependency set:
-
-```sh
-npx create-expo-app@latest norsk-rom-mobile --template blank
-```
-
-Copy `App.js` and `model.js` from this directory into the new project root, replacing the generated `App.js`. Keep the generated package.json and lockfile; this folder's package.json is for the dependency-free browser demo and model tests only.
+The mobile project is now in [`mobile/`](mobile/), using Expo and React Native. It includes the earlier scripted practice prototype, device TTS and on-device phrase storage. Start it in an Android emulator with Android Studio, Java 17 and the Android SDK installed:
 
 ```sh
-cd norsk-rom-mobile
-npx expo start
+cd mobile
+npm ci
+npm run android
 ```
 
-Follow the Expo CLI instructions for a compatible Expo Go client or simulator. The native prototype stores saved phrases locally with AsyncStorage and speaks fictional listening samples sentence by sentence. It is not an app-store-ready package. Device build and native runtime verification have not been performed here.
+The first Android build downloads the Android NDK and other build dependencies. The mobile app currently uses fictional samples and scripted role-play; it does not yet run NB-Whisper, Borealis, or Piper on the phone. See [`mobile/README.md`](mobile/README.md) and [MOBILE_MODELS.md](MOBILE_MODELS.md) for the current scope and next model work. iOS simulator builds require a full Xcode installation.
 
 ## Try these flows
 

@@ -24,7 +24,7 @@ The q5_0 version is the first candidate because it retains NB-Whisper Large whil
 
 ## Local build readiness
 
-This checkout contains a React Native entry file, not a runnable Expo project. At the time of this check, `xcodebuild` cannot run because the active developer directory is Command Line Tools rather than a full Xcode installation; `adb` and the Android emulator are not available on PATH. Docker/Kubernetes cannot replace those device runtimes. Before integrating and verifying the native ASR path, create a dedicated Expo app with a development build and install the full platform toolchains. An iOS Simulator can verify native integration and UI; real phones are still required for meaningful model performance results.
+`mobile/` is now a runnable Expo app with the earlier scripted practice screen, device TTS and phrase storage. The Android SDK, Android Studio, Java 17 and an API 37 emulator are installed on the development Mac. The Android debug build compiles; first-boot emulator shell queries currently time out, so installation and UI launch still need verification. The native NB-Whisper integration remains future work. iOS simulator builds require a full Xcode installation. Docker/Kubernetes cannot replace device runtimes, and real phones are still required for meaningful model performance results.
 
 ## Acceptance checks for the implementation
 
