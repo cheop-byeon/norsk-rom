@@ -4,10 +4,13 @@ from zipfile import ZipFile, ZIP_DEFLATED
 
 root = Path(__file__).resolve().parent
 excluded_dirs = {'.data', '.venv', '__pycache__', '.pytest_cache', '.git', 'node_modules'}
+excluded_files = {'norsk-rom-local-config.json', '.local-config.json', '.env'}
 
 def include(path):
     rel = path.relative_to(root)
     if any(part in excluded_dirs or part.endswith('.egg-info') for part in rel.parts):
+        return False
+    if path.name in excluded_files:
         return False
     if any(part.startswith('.') and part not in {'.gitignore', '.env.example'} for part in rel.parts):
         return False

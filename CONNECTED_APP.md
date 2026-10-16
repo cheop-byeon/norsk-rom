@@ -4,7 +4,20 @@
 
 > **Voice controls:** Speaking voice offers Female/Male Oslo voices; Speaking pace offers Slowest (Rolig), Normal and Fast (Rask). Default is female + slowest. Choices are remembered on this browser/device and sent with each synthesis request; cached audio is separated by voice and pace. The existing 0.8× playback control can slow the resulting audio further.
 
-# Norsk rom — connected local app, v0.2
+# Norsk Rom — local app
+
+## Quick start on macOS
+
+1. Install Python 3.12 (recommended; 3.11+ may work) and [Ollama](https://ollama.com/download).
+2. Double-click `setup_norsk_rom.command` (or run `python3.12 setup_local.py --install` in Terminal). This creates a private local API key and installs the Python environment. It does not download model weights.
+3. Start Ollama from its app. Download speech models with `python3.12 setup_local.py --download-speech` and Borealis with `python3.12 setup_local.py --pull-conversation-model`. These downloads happen only when you run those commands; allow at least 12 GB of free space for the full model set.
+4. Double-click `start_norsk_rom.command` (or run `python3.12 start_local.py`). It starts the local API, starts Ollama if its service is not already running, and opens the app at http://127.0.0.1:8000/app/.
+
+The app binds only to `127.0.0.1`; it is not exposed to your network. Use **Ctrl-C** in the launcher terminal to stop Norsk Rom. On Windows or Linux, use the same Python commands in a terminal. The `backend/.data` folder contains downloaded models, local database and saved source audio; back it up if you want to keep your data. Do not share `backend/norsk-rom-local-config.json`, which contains the private local API key.
+
+The setup checker is safe to run repeatedly and prints which pieces are ready: `python3.12 setup_local.py`. The local web app and inference do not need internet after setup. Importing an online URL, fetching public captions/feed items, or downloading/updating a model does require internet. Streaming services may still restrict access to their media.
+
+The starter archives contain source code only, not model weights, your database, or local keys. The native React Native app is still a prototype and does not yet have this full local learning flow.
 
 Open http://127.0.0.1:8000/app/ while the API is running. The old `preview.html` is an offline design prototype; its banner links to the connected app.
 
@@ -37,7 +50,7 @@ References: [NB-Whisper Large](https://huggingface.co/NbAiLab/nb-whisper-large),
 
 ## Start again on this machine
 
-From `/Users/jiebi/Documents/Codex/2026-10-01/i-x20/outputs/norsk-rom/backend`, start the development server once:
+The easiest way is to double-click `start_norsk_rom.command`. To run the development server directly, from `backend`:
 
 ```sh
 ./run_dev.sh
@@ -45,7 +58,7 @@ From `/Users/jiebi/Documents/Codex/2026-10-01/i-x20/outputs/norsk-rom/backend`, 
 
 The script uses the existing local environment on this machine and watches the backend Python modules. Backend code changes reload automatically. Frontend HTML, CSS and JavaScript are served directly from disk; refresh the browser to see those edits. Ollama must be running with `hf.co/NbAiLab/borealis-open-4b-gguf` installed. The downloaded speech models and your configuration are already present on this machine.
 
-If an older server is already occupying port 8000, stop it once from the terminal where it was started with **Control-C**, then run `./run_dev.sh`. That one-time switch is needed because the older process was started without auto-reload. After that, keep the development server running while you work; do not launch another copy for each feature. To use a different port, run `NORSK_PORT=8001 ./run_dev.sh` and open the corresponding `/app/` URL.
+If Norsk Rom is already running, the launcher reuses it. If another program occupies port 8000, set `NORSK_PORT=8001` before running `python3 start_local.py` and open its printed URL.
 
 ## Set up a fresh machine
 

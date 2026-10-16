@@ -130,6 +130,12 @@ Ten logic tests pass. A lightweight DOM test harness also exercised the six-step
 
 The connected lesson transcript is split into sentences. Learners can replay one sentence with the configured TTS voice and tap individual words for a hint. Hints use the lesson's generated expression meanings first, then a small bundled starter glossary; unsupported words are identified as having no hint. Sentence highlighting follows the selected sentence, not precise word timing in the original recording.
 
+## Local setup
+
+On macOS, install Python 3.12 (recommended) and Ollama, then double-click `setup_norsk_rom.command`. It installs the local Python environment and creates a private local key. Model downloads are separate and opt-in: `python3.12 setup_local.py --download-speech` and `python3.12 setup_local.py --pull-conversation-model`. Double-click `start_norsk_rom.command` to launch the local API and open the app. The setup checker reports missing pieces with `python3.12 setup_local.py`.
+
+The connected web app and its model inference run on the user's computer; internet is needed only for first-time dependency/model downloads or optional online-source imports. Local state and models are under `backend/.data/`. The native mobile app is still an earlier prototype. See [CONNECTED_APP.md](CONNECTED_APP.md) for details and platform instructions.
+
 ## Backend foundation (3 October 2026)
 
 A runnable FastAPI service now lives in `backend/`. See `backend/README.md` for setup, token authorization, API contracts and the live demonstration script. It provides durable sessions, quiz review, role-play, recaps, private phrasebooks and a durable demo-job worker. Hosted speech providers have been disabled; media transcription and speech synthesis use local models. The helper service still runs on the user's computer, so this is not yet a browser-only or mobile on-device build. Supabase Auth is not connected. The browser preview still runs independently of the backend.

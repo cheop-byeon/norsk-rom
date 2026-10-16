@@ -126,7 +126,7 @@ Supabase Auth integration should replace the local token map with verified Supab
 
 ## Frontend integration
 
-The browser app is wired to this API. Studio offers short-clip transcription and the optional hosted long-recording workflow; source text and generated lessons follow the API flow. `demo_client.py` demonstrates the session contract; `/docs` allows interactive calls. Use the session response as the source of truth when connecting Expo or the browser:
+The browser app is wired to this API. Studio offers local short-clip transcription; source text and generated lessons follow the API flow. `demo_client.py` demonstrates the session contract; `/docs` allows interactive calls. Use the session response as the source of truth when connecting Expo or the browser:
 
 - Hold the latest session id and revision in application state.
 - Generate one request id per user action; preserve it for network retries.
