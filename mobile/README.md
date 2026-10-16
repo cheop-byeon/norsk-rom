@@ -1,6 +1,6 @@
 # Norsk Rom mobile
 
-This Expo / React Native project is the starting point for the Android and iOS apps. Its **Lesson** tab provides a mobile version of the browser's six-step authored lesson. The role-play now has an optional push-to-talk path for NB-Whisper Large q5_0 through whisper.cpp. Learners choose when to download its approximately 1.08 GB model; transcription runs on-device, and the recognized text remains editable before sending. Lesson content and partner responses remain fictional/scripted.
+This Expo / React Native project is the starting point for the Android and iOS apps. Its **Lesson** tab provides a mobile version of the browser's six-step authored lesson. The role-play has an optional push-to-talk path for NB-Whisper Large q5_0 through whisper.cpp. Learners choose when to download its approximately 1.08 GB model; transcription runs on-device, and the recognized text remains editable before sending. On iOS, the model is stored in its own app-private folder and excluded from device backups. Lesson content and partner responses remain fictional/scripted.
 
 ## Run on Android
 
@@ -17,11 +17,15 @@ This is a development build. The JavaScript bundle is served by Metro on the dev
 
 For an Android phone later, enable Developer options and USB debugging, connect it by USB, accept its debugging prompt, then run `npm run android` and select the device if prompted.
 
+## Run on iOS
+
+On a Mac with the full Xcode app, its iOS platform components, and CocoaPods installed, run `npm ci` and `npm run ios`. Expo generates the ignored `ios/` project and installs native pods, including `whisper.rn`, `react-native-fs`, and the PCM microphone stream. The generated app requests microphone access with an on-device-use explanation and enables Apple's Extended Virtual Addressing entitlement, which `whisper.rn` recommends for Large models. Review signing in Xcode when prompted. The iOS project can be generated without Xcode using `npx expo prebuild --platform ios --no-install`, but compiling and launching it require Xcode.
+
 ## Current limits
 
 - The six-step lesson and role-play replies are scripted. Push-to-talk speech input uses local NB-Whisper after the optional model download.
 - Listening examples are fictional and spoken by the device's Norwegian TTS voice when available. The lesson transcript follows playback line by line and words offer a small built-in offline hint list.
 - The grammar correction and phrase matching are narrow demo rules, not general Norwegian grammar or pronunciation assessment.
-- NB-Whisper uses a model build that is opt-in and downloaded from the pinned Nasjonalbiblioteket Hugging Face artifact. The downloader checks the published file size and Xet ETag, then verifies SHA-256 before installation. The runtime compiles, but model download, microphone capture and transcription still need an end-to-end run on a real Android phone. This large model may exceed some phones' memory limits.
+- NB-Whisper uses a model build that is opt-in and downloaded from the pinned Nasjonalbiblioteket Hugging Face artifact. The downloader checks the published file size and Xet ETag, then verifies SHA-256 before installation. Android compiles and has passed an emulator launch check. iOS prebuild, permission configuration, model entitlement and native module autolinking have been checked, but an Xcode compile is still needed. Model download, microphone capture and transcription need end-to-end checks on real phones; this large model may exceed some phones' memory limits.
 - Phrasebook data is stored locally with AsyncStorage.
 - Borealis, Piper, imported media and generated lessons do not run in this app yet. See [`../MOBILE_MODELS.md`](../MOBILE_MODELS.md) for model details and device checks.

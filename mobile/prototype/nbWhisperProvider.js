@@ -11,12 +11,19 @@ const { RealtimeTranscriber } = require('../node_modules/whisper.rn/lib/module/r
 
 const modelName = 'nb-whisper-large-q5_0.bin';
 const partialName = `${modelName}.download`;
+const modelDirectoryPath = `${RNFS.DocumentDirectoryPath}/NorskRomModels`;
+const legacyModelPath = `${RNFS.DocumentDirectoryPath}/${modelName}`;
 let activeDownloadJob = null;
 
-export const nbWhisperModelPath = `${RNFS.DocumentDirectoryPath}/${modelName}`;
-const partialPath = `${RNFS.DocumentDirectoryPath}/${partialName}`;
+export const nbWhisperModelPath = `${modelDirectoryPath}/${modelName}`;
+const partialPath = `${modelDirectoryPath}/${partialName}`;
 
 export async function getNbWhisperModelStatus() {
+  await RNFS.mkdir(modelDirectoryPath, { NSURLIsExcludedFromBackupKey: true });
+  // Keep an already-downloaded model when upgrading from the original path.
+  if (!(await RNFS.exists(nbWhisperModelPath)) && await RNFS.exists(legacyModelPath)) {
+    await RNFS.moveFile(legacyModelPath, nbWhisperModelPath);
+  }
   if (!(await RNFS.exists(nbWhisperModelPath))) return { installed: false, bytes: 0 };
   const file = await RNFS.stat(nbWhisperModelPath);
   const bytes = Number(file.size);
@@ -33,7 +40,7 @@ export async function downloadNbWhisperModel(onProgress = () => {}) {
   if (Number(fsInfo.freeSpace) < NB_WHISPER_MODEL.sizeBytes + reserve) {
     throw new Error('Free at least 1.3 GB on this device before downloading NB-Whisper Large.');
   }
-  await RNFS.mkdir(RNFS.DocumentDirectoryPath);
+  await RNFS.mkdir(modelDirectoryPath, { NSURLIsExcludedFromBackupKey: true });
   if (await RNFS.exists(partialPath)) await RNFS.unlink(partialPath);
   let headerError = null;
   const task = RNFS.downloadFile({

@@ -9,7 +9,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "no.norskrom.app"
+      "bundleIdentifier": "no.norskrom.app",
+      "entitlements": {
+        "com.apple.developer.kernel.extended-virtual-addressing": true
+      }
     },
     "android": {
       "adaptiveIcon": {
