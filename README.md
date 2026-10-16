@@ -132,7 +132,7 @@ The connected lesson transcript is split into sentences. Learners can replay one
 
 ## Local setup
 
-On macOS, install Python 3.12 (recommended) and Ollama, then double-click `setup_norsk_rom.command`. It installs the local Python environment and creates a private local key. Model downloads are separate and opt-in: `python3.12 setup_local.py --download-speech` and `python3.12 setup_local.py --pull-conversation-model`. Double-click `start_norsk_rom.command` to launch the local API and open the app. The setup checker reports missing pieces with `python3.12 setup_local.py`.
+On macOS, install Python 3.12 (recommended) and Ollama, then double-click `setup_norsk_rom.command`. Its guided setup installs the local Python environment, creates a private local key, checks models and asks before large model downloads. Double-click `start_norsk_rom.command` to launch the local API and open the app. Run `python3.12 setup_local.py --check` to inspect readiness later.
 
 The connected web app and its model inference run on the user's computer; internet is needed only for first-time dependency/model downloads or optional online-source imports. Local state and models are under `backend/.data/`. The native mobile app is still an earlier prototype. See [CONNECTED_APP.md](CONNECTED_APP.md) for details and platform instructions.
 

@@ -5,13 +5,11 @@ if command -v python3.12 >/dev/null 2>&1; then
 else
   PYTHON=python3
 fi
-"$PYTHON" setup_local.py --install
+"$PYTHON" setup_local.py --wizard
 status=$?
 echo
 if [ "$status" -eq 0 ]; then
-  echo "Setup complete. Model downloads are separate because they are large."
-  echo "For speech: $PYTHON setup_local.py --download-speech"
-  echo "For Borealis role-play: $PYTHON setup_local.py --pull-conversation-model"
+  echo "Setup wizard finished. Run $PYTHON setup_local.py --check to see local readiness."
 else
   echo "Setup needs attention. Review the message above."
 fi

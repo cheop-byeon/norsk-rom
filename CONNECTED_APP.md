@@ -9,8 +9,8 @@
 ## Quick start on macOS
 
 1. Install Python 3.12 (recommended; 3.11+ may work) and [Ollama](https://ollama.com/download).
-2. Double-click `setup_norsk_rom.command` (or run `python3.12 setup_local.py --install` in Terminal). This creates a private local API key and installs the Python environment. It does not download model weights.
-3. Start Ollama from its app. Download speech models with `python3.12 setup_local.py --download-speech` and Borealis with `python3.12 setup_local.py --pull-conversation-model`. These downloads happen only when you run those commands; allow at least 12 GB of free space for the full model set.
+2. Double-click `setup_norsk_rom.command` (or run `python3.12 setup_local.py --wizard` in Terminal). It installs Python dependencies, creates a private local API key, checks Ollama and existing models, and asks separately before each large model download.
+3. Allow about 12 GB of free space for the full model set; actual requirements vary by platform. The setup wizard reports available space before offering downloads. To run the status check later, use `python3.12 setup_local.py --check`.
 4. Double-click `start_norsk_rom.command` (or run `python3.12 start_local.py`). It starts the local API, starts Ollama if its service is not already running, and opens the app at http://127.0.0.1:8000/app/.
 
 The app binds only to `127.0.0.1`; it is not exposed to your network. Use **Ctrl-C** in the launcher terminal to stop Norsk Rom. On Windows or Linux, use the same Python commands in a terminal. The `backend/.data` folder contains downloaded models, local database and saved source audio; back it up if you want to keep your data. Do not share `backend/norsk-rom-local-config.json`, which contains the private local API key.

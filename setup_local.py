@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Prepare and inspect a local Norsk Rom installation.
+"""Guide setup and inspect a local Norsk Rom installation.
 
-No downloads happen unless explicitly requested with --install, --download-speech,
-or --pull-conversation-model.
+The wizard installs Python dependencies after confirmation. Large model downloads
+always require a separate confirmation. Use --check for a read-only status check.
 """
 from __future__ import annotations
 
@@ -26,10 +26,146 @@ DEV_PYTHON = BACKEND / "../../../work/live-venv/bin/python"
 CONFIG = BACKEND / "norsk-rom-local-config.json"
 MODELS = BACKEND / ".data" / "models"
 OLLAMA_MODEL = "hf.co/NbAiLab/borealis-open-4b-gguf"
+FULL_MODELS_ESTIMATE = 12 * 1024**3
 
 
 def run(command: list[str], *, cwd: Path = BACKEND) -> None:
     subprocess.run(command, cwd=cwd, check=True)
+
+
+def prompt_yes_no(question: str, *, default: bool = False) -> bool:
+    suffix = " [Y/n] " if default else " [y/N] "
+    try:
+        answer = input(question + suffix).strip().lower()
+    except EOFError:
+        return default
+    if not answer:
+        return default
+    return answer in {"y", "yes"}
+
+
+def install_environment() -> None:
+    if not PYTHON.exists():
+        VENV.mkdir(parents=True, exist_ok=True)
+        run([sys.executable, "-m", "venv", str(VENV)], cwd=ROOT)
+    run([str(PYTHON), "-m", "pip", "install", "--upgrade", "pip"])
+    run([str(PYTHON), "-m", "pip", "install", "-e", ".[live]"])
+    if not CONFIG.exists():
+        run([str(PYTHON), "init_dev.py"])
+
+
+def available_python() -> Path | None:
+    if PYTHON.exists():
+        return PYTHON
+    if DEV_PYTHON.exists():
+        return DEV_PYTHON
+    return None
+
+
+def ensure_ollama_service() -> tuple[subprocess.Popen | None, bool]:
+    daemon, _ = ollama_model_installed()
+    if daemon:
+        return None, True
+    command = shutil.which("ollama")
+    if not command:
+        return None, False
+    try:
+        child = subprocess.Popen([command, "serve"], cwd=ROOT,
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        return None, False
+    for _ in range(30):
+        try:
+            child.wait(timeout=0.5)
+            return child, False
+        except subprocess.TimeoutExpired:
+            daemon, _ = ollama_model_installed()
+            if daemon:
+                return child, True
+    child.terminate()
+    return child, False
+
+
+def stop_child(child: subprocess.Popen | None) -> None:
+    if child is None or child.poll() is not None:
+        return
+    child.terminate()
+    try:
+        child.wait(timeout=3)
+    except subprocess.TimeoutExpired:
+        child.kill()
+
+
+def guided_setup() -> int:
+    print("Norsk Rom guided local setup")
+    print("Setup installs the local app dependencies. Model weights are large and are downloaded only after you choose them.")
+    if sys.version_info < (3, 11):
+        print("Install Python 3.12 (recommended) or 3.11+, then run this setup again.", file=sys.stderr)
+        return 2
+
+    current_python = available_python()
+    if current_python:
+        try:
+            subprocess.run([str(current_python), "-c", "import fastapi, torch, piper"], cwd=BACKEND,
+                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            source = "project" if current_python == PYTHON else "existing development"
+            print(f"Using the {source} Python environment.")
+        except (subprocess.CalledProcessError, OSError):
+            if prompt_yes_no("Repair/install the local Python environment?", default=True):
+                install_environment()
+                current_python = PYTHON
+    else:
+        if not prompt_yes_no("Install the local Python environment now? (requires internet)", default=True):
+            print("Skipped dependency installation. You can restart with this setup command later.")
+            return report()
+        install_environment()
+        current_python = PYTHON
+
+    if not CONFIG.exists():
+        if current_python is None:
+            print("Python environment is unavailable; cannot create the private local key.", file=sys.stderr)
+            return 2
+        run([str(current_python), "init_dev.py"])
+
+    free = shutil.disk_usage(ROOT).free
+    print(f"Available disk space: {human_size(free)}. Plan for about 12 GB for the full model set; sizes vary by platform.")
+
+    weights = MODELS / "nb-whisper-large"
+    asr_ok = any((weights / name).exists() for name in ("model.safetensors", "model.safetensors.index.json"))
+    piper = MODELS / "no_NO-talesyntese-medium.onnx"
+    if asr_ok and piper.exists():
+        print("Speech models are already installed.")
+    elif prompt_yes_no("Download NB-Whisper Large and the Norwegian Piper voice from Hugging Face?", default=False):
+        if current_python is None:
+            print("Run the Python environment setup first, then rerun this wizard.", file=sys.stderr)
+            return 2
+        run([str(current_python), "setup_local_models.py"])
+    else:
+        print("Skipped speech model downloads.")
+
+    ollama = shutil.which("ollama")
+    child = None
+    if not ollama:
+        print("Ollama is not installed. Install it from https://ollama.com/download to enable local role-play and lesson generation.")
+    else:
+        child, daemon = ensure_ollama_service()
+        if not daemon:
+            print("Could not start the local Ollama service. Start Ollama, then rerun setup to install Borealis.")
+        else:
+            _, model = ollama_model_installed()
+            if model:
+                print("Borealis Open 4B is already installed in Ollama.")
+            elif prompt_yes_no("Download NB Borealis Open 4B to Ollama? (about 3.3 GB; requires internet)", default=False):
+                try:
+                    run([ollama, "pull", OLLAMA_MODEL], cwd=ROOT)
+                finally:
+                    stop_child(child)
+                child = None
+            else:
+                print("Skipped Borealis download; the app can open, but generated role-play and lessons need this model.")
+    stop_child(child)
+    print("\nSetup check:")
+    return report()
 
 
 def human_size(size: int) -> str:
@@ -91,7 +227,7 @@ def report() -> int:
     print(f"Borealis Open 4B: {model_status}")
     try:
         free = shutil.disk_usage(ROOT).free
-        print(f"Free disk space: {human_size(free)} (allow at least 12 GB before downloading all models)")
+        print(f"Free disk space: {human_size(free)} (plan for about 12 GB for the full model set)")
     except OSError:
         pass
     if not env_available or not CONFIG.exists():
@@ -111,6 +247,8 @@ def report() -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--wizard", action="store_true", help="run the guided first-time setup")
+    parser.add_argument("--check", action="store_true", help="check local setup without installing or downloading")
     parser.add_argument("--install", action="store_true", help="create venv, install local inference dependencies, and create a private local key")
     parser.add_argument("--download-speech", action="store_true", help="download NB-Whisper Large and Piper voice files from Hugging Face")
     parser.add_argument("--pull-conversation-model", action="store_true", help="download Borealis Open 4B into the local Ollama installation")
@@ -119,21 +257,20 @@ def main() -> int:
     if sys.version_info < (3, 11):
         print("Python 3.11 or newer is required. Install Python, then rerun this command.", file=sys.stderr)
         return 2
+    if args.wizard:
+        return guided_setup()
+    if args.check:
+        return report()
     if args.install:
-        VENV.mkdir(parents=True, exist_ok=True)
-        if not PYTHON.exists():
-            run([sys.executable, "-m", "venv", str(VENV)], cwd=ROOT)
-        run([str(PYTHON), "-m", "pip", "install", "--upgrade", "pip"])
-        run([str(PYTHON), "-m", "pip", "install", "-e", ".[live]"])
-        if not CONFIG.exists():
-            run([str(PYTHON), "init_dev.py"])
+        install_environment()
     if args.download_speech:
-        if not PYTHON.exists():
+        model_python = available_python()
+        if model_python is None:
             print("Run python3.12 setup_local.py --install first (Python 3.12 is recommended).", file=sys.stderr)
             return 2
         if not CONFIG.exists():
-            run([str(PYTHON), "init_dev.py"])
-        run([str(PYTHON), "setup_local_models.py"])
+            run([str(model_python), "init_dev.py"])
+        run([str(model_python), "setup_local_models.py"])
     if args.pull_conversation_model:
         if not shutil.which("ollama"):
             print("Ollama is not installed. Install it from https://ollama.com/download, start it, and retry.", file=sys.stderr)
