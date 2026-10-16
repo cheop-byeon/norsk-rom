@@ -24,7 +24,7 @@ The q5_0 version is the first candidate because it retains NB-Whisper Large whil
 
 ## Local build readiness
 
-`mobile/` is now a runnable Expo app with the earlier scripted practice screen, device TTS and phrase storage. The Android SDK, Android Studio, Java 17 and an API 37 emulator are installed on the development Mac. The Android debug build compiles; first-boot emulator shell queries currently time out, so installation and UI launch still need verification. The native NB-Whisper integration remains future work. iOS simulator builds require a full Xcode installation. Docker/Kubernetes cannot replace device runtimes, and real phones are still required for meaningful model performance results.
+`mobile/` now has a native `whisper.rn` integration, an opt-in download of the pinned q5_0 model, and push-to-talk capture through a PCM stream adapter. The Android debug app compiles. The learner must download the 1.08 GB model and grant microphone access; captured audio is processed in memory and not written to disk. The transcript is placed in an editable reply field and is never sent automatically. Model download, microphone capture and transcription still need an end-to-end run on a phone; the emulator's ADB server could not start in the restricted shell. iOS simulator builds require a full Xcode installation. Docker/Kubernetes cannot replace device runtimes, and real phones are still required for meaningful model performance results.
 
 ## Acceptance checks for the implementation
 

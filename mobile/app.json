@@ -23,6 +23,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Norsk Rom to record a short Norwegian practice turn. Audio stays on this device."
+        }
+      ]
+    ]
   }
 }

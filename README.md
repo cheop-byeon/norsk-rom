@@ -41,7 +41,7 @@ Open http://localhost:8080 in a browser. Use a local server: opening index.html 
 
 ## Android / iOS app
 
-The mobile project is now in [`mobile/`](mobile/), using Expo and React Native. It includes the earlier scripted practice prototype, device TTS and on-device phrase storage. Start it in an Android emulator with Android Studio, Java 17 and the Android SDK installed:
+The mobile project is in [`mobile/`](mobile/), using Expo and React Native. Its six-step lesson can capture push-to-talk speech and transcribe it locally with NB-Whisper Large q5_0 after the learner downloads the optional 1.08 GB model. The lesson and partner remain scripted demos; on-device transcription has not yet been exercised on a real phone. Start it in an Android emulator with Android Studio, Java 17 and the Android SDK installed:
 
 ```sh
 cd mobile
@@ -49,7 +49,7 @@ npm ci
 npm run android
 ```
 
-The first Android build downloads the Android NDK and other build dependencies. The mobile app currently uses fictional samples and scripted role-play; it does not yet run NB-Whisper, Borealis, or Piper on the phone. See [`mobile/README.md`](mobile/README.md) and [MOBILE_MODELS.md](MOBILE_MODELS.md) for the current scope and next model work. iOS simulator builds require a full Xcode installation.
+The first Android build downloads the Android NDK and other build dependencies. NB-Whisper requires a native development build; it is not available in Expo Go. The mobile app still has fictional lessons and scripted role-play, and Borealis and Piper do not run on the phone. See [`mobile/README.md`](mobile/README.md) and [MOBILE_MODELS.md](MOBILE_MODELS.md) for current limits. iOS simulator builds require a full Xcode installation.
 
 ## Try these flows
 
@@ -109,13 +109,7 @@ Browser additions:
 
 A Norwegian system/browser voice must be available for TTS. If unavailable, the UI reports it; it never silently uses an English voice. Device speech processing depends on the OS/browser. Local media decoding depends on supported codecs. Test actual playback on your target devices.
 
-For the native entry point, install its two dependencies inside the generated Expo project:
-
-```sh
-npx expo install expo-speech @react-native-async-storage/async-storage
-```
-
-Copy the updated App.js and model.js afterwards. Listening reveals the transcript and highlights each sentence as the device voice reads it; replay starts at the current sentence, and tapping a word shows an offline starter hint where available. Saved phrases persist on the device. Native TTS uses a detected Norwegian voice; native file import/clipping remains planned. On physical iOS devices, disable silent mode for expo-speech playback. See https://docs.expo.dev/versions/latest/sdk/speech/ and https://github.com/react-native-async-storage/async-storage.
+The native demo now lives in [`mobile/`](mobile/). It includes the six-step lesson, device TTS, phrase storage and an optional, native NB-Whisper push-to-talk route. See [`mobile/README.md`](mobile/README.md) for current setup and limitations. This older standalone prototype is retained as a reference.
 
 Six model/clip-range tests pass. Browser JavaScript syntax checking passes. Browser visual/interaction verification and native device execution remain unverified.
 
@@ -129,7 +123,7 @@ The connected lesson transcript is split into sentences. Learners can replay one
 
 On macOS, install Python 3.12 (recommended) and Ollama, then double-click `setup_norsk_rom.command`. Its guided setup installs the local Python environment, creates a private local key, checks models and asks before large model downloads. Double-click `start_norsk_rom.command` to launch the local API and open the app. Run `python3.12 setup_local.py --check` to inspect readiness later.
 
-The connected web app and its model inference run on the user's computer; internet is needed only for first-time dependency/model downloads or optional online-source imports. Local state and models are under `backend/.data/`. The native mobile app now has an offline listening/phrasebook prototype, but does not yet run Norsk Rom's ASR, chat or lesson-generation models on the phone. NB-Whisper Large provides a quantized ggml file suitable for a `whisper.cpp`-based React Native experiment; the mobile runtime and device performance are not yet verified. See [MOBILE_MODELS.md](MOBILE_MODELS.md) for the model/runtime assessment and [CONNECTED_APP.md](CONNECTED_APP.md) for the current web flow.
+The connected web app and its model inference run on the user's computer; internet is needed only for first-time dependency/model downloads or optional online-source imports. Local state and models are under `backend/.data/`. The native mobile app now includes optional NB-Whisper ASR, but real-phone download, microphone and inference checks remain. Conversation, lesson generation and Piper are not integrated on mobile. See [MOBILE_MODELS.md](MOBILE_MODELS.md) for the model/runtime assessment and [CONNECTED_APP.md](CONNECTED_APP.md) for the current web flow.
 
 ## Backend foundation (3 October 2026)
 

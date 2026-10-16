@@ -1,6 +1,6 @@
 # Norsk Rom mobile
 
-This Expo / React Native project is the starting point for the Android and iOS apps. Its **Lesson** tab now provides a mobile version of the browser's six-step authored lesson: listen, answer, review evidence, practise expressions, do a scripted role-play, and see a recap. The app also has the earlier listening samples, role-play scenarios, local phrase storage, and device text-to-speech. Lesson content is a fictional fixture; it is not imported media and it is not yet connected to the on-device NB model runtimes.
+This Expo / React Native project is the starting point for the Android and iOS apps. Its **Lesson** tab provides a mobile version of the browser's six-step authored lesson. The role-play now has an optional push-to-talk path for NB-Whisper Large q5_0 through whisper.cpp. Learners choose when to download its approximately 1.08 GB model; transcription runs on-device, and the recognized text remains editable before sending. Lesson content and partner responses remain fictional/scripted.
 
 ## Run on Android
 
@@ -19,8 +19,9 @@ For an Android phone later, enable Developer options and USB debugging, connect 
 
 ## Current limits
 
-- The six-step lesson and role-play replies are scripted; the microphone is not connected.
+- The six-step lesson and role-play replies are scripted. Push-to-talk speech input uses local NB-Whisper after the optional model download.
 - Listening examples are fictional and spoken by the device's Norwegian TTS voice when available. The lesson transcript follows playback line by line and words offer a small built-in offline hint list.
 - The grammar correction and phrase matching are narrow demo rules, not general Norwegian grammar or pronunciation assessment.
+- NB-Whisper uses a model build that is opt-in and downloaded from the pinned Nasjonalbiblioteket Hugging Face artifact. The downloader checks the published file size and Xet ETag, then verifies SHA-256 before installation. The runtime compiles, but model download, microphone capture and transcription still need an end-to-end run on a real Android phone. This large model may exceed some phones' memory limits.
 - Phrasebook data is stored locally with AsyncStorage.
-- NB-Whisper, Borealis, Piper, imported media and generated lessons do not run in this app yet. See [`../MOBILE_MODELS.md`](../MOBILE_MODELS.md) for the planned ASR integration and device checks.
+- Borealis, Piper, imported media and generated lessons do not run in this app yet. See [`../MOBILE_MODELS.md`](../MOBILE_MODELS.md) for model details and device checks.

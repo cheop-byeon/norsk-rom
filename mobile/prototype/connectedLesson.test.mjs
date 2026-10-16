@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { connectedLesson, getEvidence, correctLessonText, replyToLesson, scoreLesson } from './connectedLesson.js';
+import { NB_WHISPER_MODEL, matchesPublishedNbModel } from './nbWhisperModel.js';
 
 test('lesson fixture contains a continuous six-line conversation and two questions', () => {
   assert.equal(connectedLesson.lines.length, 6);
@@ -25,4 +26,14 @@ test('role-play correction fixes the authored grammar example', () => {
 test('scripted partner response follows the learner intent', () => {
   assert.match(replyToLesson('Jeg vil gjerne ta den med.'), /førtifem kroner/i);
   assert.match(replyToLesson('Jeg vil betale med kort.'), /kommer snart/i);
+});
+
+test('mobile model download is pinned and validates published size and file identity', () => {
+  assert.equal(NB_WHISPER_MODEL.sizeBytes, 1081140203);
+  assert.equal(NB_WHISPER_MODEL.url.includes(NB_WHISPER_MODEL.revision), true);
+  assert.equal(matchesPublishedNbModel({ size: 1081140203, etag: `"${NB_WHISPER_MODEL.xetEtag}"` }), true);
+  assert.equal(matchesPublishedNbModel({ size: 1081140202, etag: NB_WHISPER_MODEL.xetEtag }), false);
+  assert.equal(matchesPublishedNbModel({ size: 1081140203, etag: 'different-file' }), false);
+  assert.equal(matchesPublishedNbModel({ size: 1081140203, sha256: NB_WHISPER_MODEL.sha256.toUpperCase() }), true);
+  assert.equal(matchesPublishedNbModel({ size: 1081140203, sha256: 'different-checksum' }), false);
 });
