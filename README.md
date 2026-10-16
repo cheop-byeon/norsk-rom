@@ -134,7 +134,7 @@ The connected lesson transcript is split into sentences. Learners can replay one
 
 On macOS, install Python 3.12 (recommended) and Ollama, then double-click `setup_norsk_rom.command`. Its guided setup installs the local Python environment, creates a private local key, checks models and asks before large model downloads. Double-click `start_norsk_rom.command` to launch the local API and open the app. Run `python3.12 setup_local.py --check` to inspect readiness later.
 
-The connected web app and its model inference run on the user's computer; internet is needed only for first-time dependency/model downloads or optional online-source imports. Local state and models are under `backend/.data/`. The native mobile app now has an offline listening/phrasebook prototype, but does not yet run Norsk Rom's ASR, chat or lesson-generation models on the phone. See [CONNECTED_APP.md](CONNECTED_APP.md) for details and platform instructions.
+The connected web app and its model inference run on the user's computer; internet is needed only for first-time dependency/model downloads or optional online-source imports. Local state and models are under `backend/.data/`. The native mobile app now has an offline listening/phrasebook prototype, but does not yet run Norsk Rom's ASR, chat or lesson-generation models on the phone. NB-Whisper Large provides a quantized ggml file suitable for a `whisper.cpp`-based React Native experiment; the mobile runtime and device performance are not yet verified. See [MOBILE_MODELS.md](MOBILE_MODELS.md) for the model/runtime assessment and [CONNECTED_APP.md](CONNECTED_APP.md) for the current web flow.
 
 ## Backend foundation (3 October 2026)
 
