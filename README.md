@@ -54,7 +54,7 @@ cd norsk-rom-mobile
 npx expo start
 ```
 
-Follow the Expo CLI instructions for a compatible Expo Go client or simulator. The native version keeps saved phrases in memory for the current app session. It is an entry-point prototype, not an app-store-ready package. Device build and native runtime verification have not been performed here.
+Follow the Expo CLI instructions for a compatible Expo Go client or simulator. The native prototype stores saved phrases locally with AsyncStorage and speaks fictional listening samples sentence by sentence. It is not an app-store-ready package. Device build and native runtime verification have not been performed here.
 
 ## Try these flows
 
@@ -71,8 +71,8 @@ Follow the Expo CLI instructions for a compatible Expo Go client or simulator. T
 
 - `index.html`: responsive layout and styling, no remote assets.
 - `web.js`: browser navigation, state, local phrasebook, exercise interactions.
-- `App.js`: React Native / Expo frontend using React Native components and expo-speech.
-- `model.js`: shared scenarios, scripted responses, narrow correction fixture, 12 listening-script fixtures (2 per level).
+- `App.js`: React Native / Expo frontend using device speech and local phrase storage.
+- `model.js`: shared scenarios, scripted responses, narrow correction fixture, listening fixtures, sentence splitting and bundled word hints.
 - `model.test.js`: deterministic logic tests.
 - `package.json`: browser demo metadata and test command; no npm dependencies.
 
@@ -114,13 +114,13 @@ Browser additions:
 
 A Norwegian system/browser voice must be available for TTS. If unavailable, the UI reports it; it never silently uses an English voice. Device speech processing depends on the OS/browser. Local media decoding depends on supported codecs. Test actual playback on your target devices.
 
-For the updated native entry point, install the added dependency inside the generated Expo project:
+For the native entry point, install its two dependencies inside the generated Expo project:
 
 ```sh
-npx expo install expo-speech
+npx expo install expo-speech @react-native-async-storage/async-storage
 ```
 
-Copy the updated App.js and model.js afterwards. Native TTS uses a detected Norwegian voice; native file import/clipping remains planned. On physical iOS devices, disable silent mode for expo-speech playback. See https://docs.expo.dev/versions/latest/sdk/speech/.
+Copy the updated App.js and model.js afterwards. Listening reveals the transcript and highlights each sentence as the device voice reads it; replay starts at the current sentence, and tapping a word shows an offline starter hint where available. Saved phrases persist on the device. Native TTS uses a detected Norwegian voice; native file import/clipping remains planned. On physical iOS devices, disable silent mode for expo-speech playback. See https://docs.expo.dev/versions/latest/sdk/speech/ and https://github.com/react-native-async-storage/async-storage.
 
 Six model/clip-range tests pass. Browser JavaScript syntax checking passes. Browser visual/interaction verification and native device execution remain unverified.
 
@@ -134,7 +134,7 @@ The connected lesson transcript is split into sentences. Learners can replay one
 
 On macOS, install Python 3.12 (recommended) and Ollama, then double-click `setup_norsk_rom.command`. Its guided setup installs the local Python environment, creates a private local key, checks models and asks before large model downloads. Double-click `start_norsk_rom.command` to launch the local API and open the app. Run `python3.12 setup_local.py --check` to inspect readiness later.
 
-The connected web app and its model inference run on the user's computer; internet is needed only for first-time dependency/model downloads or optional online-source imports. Local state and models are under `backend/.data/`. The native mobile app is still an earlier prototype. See [CONNECTED_APP.md](CONNECTED_APP.md) for details and platform instructions.
+The connected web app and its model inference run on the user's computer; internet is needed only for first-time dependency/model downloads or optional online-source imports. Local state and models are under `backend/.data/`. The native mobile app now has an offline listening/phrasebook prototype, but does not yet run Norsk Rom's ASR, chat or lesson-generation models on the phone. See [CONNECTED_APP.md](CONNECTED_APP.md) for details and platform instructions.
 
 ## Backend foundation (3 October 2026)
 

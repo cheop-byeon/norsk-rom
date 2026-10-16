@@ -29,6 +29,37 @@ export function exercise(level, variant=0) {
  return {title:v===0?'A new chapter for the library':'A place to pause',text:texts[level][v],question:questions[0],options:questions[1],answer:questions[2],explanation:questions[3],level,source:'Original fictional fixture · no publisher content',note:'Illustrative difficulty, not a validated CEFR assessment.'};
 }
 
+export function splitSentences(text) {
+ return String(text).match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(sentence=>sentence.trim()).filter(Boolean) ?? [];
+}
+
+const wordHints = {
+ biblioteket:'the library', åpent:'open', søndag:'Sunday', søndager:'Sundays', åpner:'opens', klokka:'at (the time)',
+ tolv:'twelve', besøkende:'visitors', lese:'read', låne:'borrow', bøker:'books', datamaskinene:'the computers',
+ satt:'placed', benk:'bench', benken:'the bench', parken:'the park', står:'stands', lekeplassen:'the playground',
+ foreldre:'parents', sitte:'sit', barna:'the children', leker:'play', utvider:'expands', åpningstidene:'opening hours',
+ holder:'keeps', målet:'the goal', tilgang:'access', rolig:'quiet', sted:'place', studere:'study', ønsker:'requests',
+ beboerne:'the residents', kommunen:'the municipality', hyggeligere:'more pleasant', møteplass:'meeting place',
+ nye:'new', søndagsåpning:'Sunday opening', tilbudet:'the service', tilgjengelig:'accessible', jobber:'work',
+ uka:'the week', samtidig:'at the same time', enkelte:'some people', spørsmål:'questions', utvidelsen:'the expansion',
+ gjennomføres:'be carried out', dagens:'today’s', budsjett:'budget', beskjedent:'modest', tiltak:'measure',
+ styrke:'strengthen', nærmiljøet:'the local community', kritikere:'critics', etterlyser:'are calling for',
+ helhetlig:'comprehensive', plan:'plan', vedlikehold:'maintenance', fremstår:'appears', sosial:'social', betydning:'significance',
+ hvorvidt:'whether', faktisk:'actually', fellesskapet:'the community', avhenger:'depends', imidlertid:'however',
+ inngår:'is part of', gjennomtenkt:'well-considered', prioritering:'prioritization', offentlige:'public', rom:'spaces',
+ dørene:'the doors', åpnes:'are opened', søndager:'Sundays', leses:'be read', løfte:'promise', fellesskapets:'the community’s',
+ tilgjengelige:'available', arbeidsukas:'the work week’s', rytme:'rhythm', innfris:'fulfilled', tynne:'reduce',
+ bemanningen:'staffing', risikerer:'risks', tilgjengeligheten:'accessibility', symbolsk:'symbolic', reell:'real',
+ vanskelig:'difficult', bære:'carry', hele:'the whole', visjon:'vision', levende:'vibrant', nærmiljøer:'local communities',
+ likevel:'nevertheless', tilsynelatende:'seemingly', uanselige:'insignificant', tiltakene:'the measures', avstanden:'the gap',
+ politiske:'political', ambisjoner:'ambitions', hverdagsliv:'everyday life', tidvis:'at times'
+};
+
+export function hintForWord(word) {
+ const normalized=String(word).toLocaleLowerCase('nb-NO').replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu,'');
+ return wordHints[normalized] ?? null;
+}
+
 // Fixed windows are a local demo; production segmentation uses speech boundaries.
 export function splitClips(duration, seconds=20) {
  if (!Number.isFinite(duration) || duration <= 0 || !Number.isFinite(seconds) || seconds < 5) return [];

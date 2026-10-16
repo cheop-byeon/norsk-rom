@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {levels, scenarios, exercise, mockReply} from './model.js';
+import {levels, scenarios, exercise, mockReply, splitSentences, hintForWord} from './model.js';
 test('each level and fixture has a usable answer and source disclosure',()=>{
  for(const level of levels) for(let v=0;v<2;v++) { const e=exercise(level,v); assert.ok(e.text); assert.ok(e.options[e.answer]); assert.match(e.source,/fictional/); }
 });
@@ -14,6 +14,14 @@ test('only the known grammar fixture is corrected',()=>{
  assert.equal(mockReply(scenarios[0],'Jeg vil gjerne ha en kaffe.',0).correction,null);
 });
 test('unsupported CEFR level is rejected',()=>assert.throws(()=>exercise('D1')));
+test('listening transcript splits into speakable sentences and keeps punctuation',()=>{
+ assert.deepEqual(splitSentences('Hei! Biblioteket er åpent. Er du her?'),['Hei!','Biblioteket er åpent.','Er du her?']);
+ assert.deepEqual(splitSentences(''),[]);
+});
+test('offline word hints normalize punctuation and identify unsupported words',()=>{
+ assert.equal(hintForWord('Biblioteket?'),'the library');
+ assert.equal(hintForWord('ukjentord'),null);
+});
 
 import {splitClips} from './model.js';
 test('clip ranges cover the media without gaps or an empty tail',()=>{
