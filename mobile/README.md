@@ -21,6 +21,8 @@ For an Android phone later, enable Developer options and USB debugging, connect 
 
 On a Mac with the full Xcode app, its iOS platform components, and CocoaPods installed, run `npm ci` and `npm run ios`. Expo generates the ignored `ios/` project and installs native pods, including `whisper.rn`, `react-native-fs`, and the PCM microphone stream. The generated app requests microphone access with an on-device-use explanation and enables Apple's Extended Virtual Addressing entitlement, which `whisper.rn` recommends for Large models. Review signing in Xcode when prompted. The iOS project can be generated without Xcode using `npx expo prebuild --platform ios --no-install`, but compiling and launching it require Xcode.
 
+GitHub Actions also compiles an unsigned iOS Simulator build whenever mobile files change. This verifies the native iOS build without an iPhone or Apple signing account; physical-device audio and model performance still need a real phone.
+
 ## Current limits
 
 - The six-step lesson and role-play replies are scripted. Push-to-talk speech input uses local NB-Whisper after the optional model download.
