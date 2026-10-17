@@ -33,7 +33,7 @@ This is an integration milestone, not proof that every phone can run it well. Bo
 
 ## Local build readiness
 
-`mobile/` supports opt-in NB-Whisper q5_0 transcription and opt-in Borealis 1B replies through native React Native runtimes. Both downloads are pinned and SHA-256 checked; the models live in app-private storage. Android compiled and launched in an Android 37 emulator. The iOS simulator workflow previously compiled and launched the app; the current llama.rn integration still needs its CI run. No model was downloaded or run during these build checks. Real-phone download, offline inference, microphone use, latency, memory, battery and heat remain to be tested. A simulator cannot establish real-device model performance.
+`mobile/` supports opt-in NB-Whisper q5_0 transcription and opt-in Borealis 1B replies through native React Native runtimes. Both downloads are pinned and SHA-256 checked; the models live in app-private storage. Android compiled and launched in an Android 37 emulator. The updated llama.rn integration compiled and launched in the iOS simulator in GitHub Actions. No model was downloaded or run during these build checks. Real-phone download, offline inference, microphone use, latency, memory, battery and heat remain to be tested. A simulator cannot establish real-device model performance.
 
 ## Acceptance checks for the implementation
 
