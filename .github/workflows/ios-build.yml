@@ -45,5 +45,13 @@ jobs:
           -scheme NorskRom
           -configuration Release
           -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath /tmp/norsk-rom-derived
           CODE_SIGNING_ALLOWED=NO
           build
+      - name: Launch the app in an iOS Simulator
+        run: |
+          simulator_id="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; devices=json.load(sys.stdin)["devices"]; print(next(d["udid"] for group in devices.values() for d in group if d["isAvailable"] and "iPhone" in d["name"]))')"
+          xcrun simctl boot "$simulator_id" 2>/dev/null || true
+          xcrun simctl bootstatus "$simulator_id" -b
+          xcrun simctl install "$simulator_id" /tmp/norsk-rom-derived/Build/Products/Release-iphonesimulator/NorskRom.app
+          xcrun simctl launch "$simulator_id" no.norskrom.app
