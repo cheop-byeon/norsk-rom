@@ -98,6 +98,7 @@ export class LocalNbWhisperProvider {
   transcriber = null;
   transcript = '';
   slices = new Map();
+  fileTask = null;
 
   async load() {
     if (this.context) return;
@@ -139,7 +140,22 @@ export class LocalNbWhisperProvider {
     return this.transcript;
   }
 
+  async transcribeFile(path, onProgress = () => {}) {
+    await this.load();
+    this.fileTask = this.context.transcribe(`file://${path}`, { language: 'no', maxThreads: 4, onProgress });
+    try {
+      const result = await this.fileTask.promise;
+      if (result?.isAborted) throw new Error('Transcription canceled. The imported source is still saved on this device.');
+      const text = String(result?.result ?? '').trim();
+      if (!text) throw new Error('NB-Whisper did not detect speech in this file. Check that it contains clear Norwegian audio.');
+      return { text, segments: result.segments ?? [] };
+    } finally { this.fileTask = null; }
+  }
+
+  async cancelFileTranscription() { if (this.fileTask) await this.fileTask.stop().catch(() => {}); }
+
   async release() {
+    await this.cancelFileTranscription();
     if (this.transcriber) await this.transcriber.release().catch(() => {});
     if (this.context) await this.context.release().catch(() => {});
     this.transcriber = null;

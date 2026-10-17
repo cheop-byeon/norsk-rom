@@ -30,10 +30,12 @@ This is an integration milestone, not proof that every phone can run it well. Bo
 - [NB-Whisper Large full ggml file](https://huggingface.co/NbAiLab/nb-whisper-large/blob/main/ggml-model.bin): full artifact, currently listed as about 3.1 GB.
 - [`whisper.rn` setup and usage](https://github.com/mybigday/whisper.rn): native setup, Expo prebuild requirement and local transcription API.
 - [Expo prebuild](https://docs.expo.dev/workflow/prebuild/): generates native iOS and Android projects needed by native modules.
+- [Sherpa-ONNX React Native](https://github.com/XDcobra/react-native-sherpa-onnx): offline Android/iOS runtime for Piper-style VITS speech generation.
+- [Norwegian Talesyntese medium voice](https://huggingface.co/rhasspy/piper-voices/tree/main/no/no_NO/talesyntese/medium): Norwegian Bokmål Piper voice model; the Sherpa-ONNX release provides a model archive with the runtime's required files.
 
 ## Local build readiness
 
-`mobile/` supports opt-in NB-Whisper q5_0 transcription and opt-in Borealis 1B replies through native React Native runtimes. Both downloads are pinned and SHA-256 checked; the models live in app-private storage. Android compiled and launched in an Android 37 emulator. The updated llama.rn integration compiled and launched in the iOS simulator in GitHub Actions. No model was downloaded or run during these build checks. Real-phone download, offline inference, microphone use, latency, memory, battery and heat remain to be tested. A simulator cannot establish real-device model performance.
+`mobile/` supports opt-in NB-Whisper q5_0 transcription, Borealis 1B replies and lesson generation, and Piper playback through native React Native runtimes. NB model downloads are pinned and SHA-256 checked; the models and imported sources live in app-private storage. Android native debug build and Android/iOS JS bundles compile. iOS native compilation runs in GitHub Actions because the development Mac has no full Xcode or CocoaPods. No model has been downloaded or run on a physical phone. Real-phone import, offline inference, microphone use, Piper audio quality, long-audio latency, memory, battery and heat remain to be tested. A simulator cannot establish real-device model performance.
 
 ## Acceptance checks for the implementation
 
@@ -42,4 +44,4 @@ This is an integration milestone, not proof that every phone can run it well. Bo
 3. Compare transcript quality with the desktop NB-Whisper Large result using the same learner recordings, including non-native speech and more than one Norwegian spoken variety.
 4. Record model download size, peak RAM, cold-start time, real-time factor, heat/battery impact and error cases. Set a minimum-device recommendation from these results.
 5. Test Borealis and Whisper separately on a real Android phone, then repeat on an iPhone when one is available. Confirm each works offline after model installation and record cold start, latency, peak memory, heat, battery and recognition or response errors.
-6. Add Piper TTS, media imports and lesson generation only after each has a suitable local mobile runtime and passes an offline test.
+6. Verify the new mobile media-to-lesson path end to end on Android and iOS with networking disabled after model installation; measure long-audio latency, memory, battery, and Piper playback quality. Video extraction, timestamp alignment, and crash-resumable import are still future work.

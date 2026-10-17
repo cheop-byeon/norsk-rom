@@ -9,6 +9,7 @@
     "expo": "~58.0.14",
     "expo-audio": "~58.0.9",
     "expo-build-properties": "~58.0.11",
+    "expo-document-picker": "~58.0.4",
     "expo-speech": "~58.0.3",
     "expo-status-bar": "~58.0.3",
     "expo-system-ui": "~58.0.6",
@@ -17,6 +18,7 @@
     "react-dom": "19.3.0",
     "react-native": "0.88.0",
     "react-native-fs": "^2.20.0",
+    "react-native-sherpa-onnx": "^0.4.4",
     "react-native-web": "^0.21.4",
     "whisper.rn": "0.7.4"
   },
@@ -27,7 +29,7 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test prototype/connectedLesson.test.mjs",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test prototype/*.test.mjs",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",

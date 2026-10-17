@@ -23,5 +23,11 @@ export class LocalNbWhisperProvider {
     return '';
   }
 
+  async transcribeFile() {
+    throw new Error('Local audio transcription is available in installed Android and iOS builds.');
+  }
+
+  async cancelFileTranscription() {}
+
   async release() {}
 }
