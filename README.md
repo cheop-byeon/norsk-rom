@@ -41,7 +41,7 @@ Open http://localhost:8080 in a browser. Use a local server: opening index.html 
 
 ## Android / iOS app
 
-The mobile project is in [`mobile/`](mobile/), using Expo and React Native. Its six-step lesson can capture push-to-talk speech and transcribe it locally with NB-Whisper Large q5_0 after the learner downloads the optional 1.08 GB model. The lesson and partner remain scripted demos; on-device transcription has not yet been exercised on a real phone. Start it in an Android emulator with Android Studio, Java 17 and the Android SDK installed:
+The mobile project is in [`mobile/`](mobile/), using Expo and React Native. It offers optional local speech recognition with NB-Whisper Large q5_0 (1.08 GB) and an AI role-play partner with NB Borealis 1B (806 MB); both models are downloaded only when selected. The Android debug app now compiles and launches in an emulator. Real-phone audio and AI inference tests remain. Start it in an Android emulator with Android Studio, Java 17 and the Android SDK installed:
 
 ```sh
 cd mobile
@@ -49,7 +49,7 @@ npm ci
 npm run android
 ```
 
-The first Android build downloads the Android NDK and other build dependencies. NB-Whisper requires a native development build; it is not available in Expo Go. The mobile app still has fictional lessons and scripted role-play, and Borealis and Piper do not run on the phone. See [`mobile/README.md`](mobile/README.md) and [MOBILE_MODELS.md](MOBILE_MODELS.md) for current limits. iOS simulator builds require a full Xcode installation.
+The first Android build downloads the Android NDK and other build dependencies. Native AI requires a development build; it is not available in Expo Go. Listening lessons are still authored demo content, Piper and media imports are not on mobile yet. See [`mobile/README.md`](mobile/README.md) and [MOBILE_MODELS.md](MOBILE_MODELS.md) for current limits.
 
 ## Try these flows
 
@@ -123,7 +123,7 @@ The connected lesson transcript is split into sentences. Learners can replay one
 
 On macOS, install Python 3.12 (recommended) and Ollama, then double-click `setup_norsk_rom.command`. Its guided setup installs the local Python environment, creates a private local key, checks models and asks before large model downloads. Double-click `start_norsk_rom.command` to launch the local API and open the app. Run `python3.12 setup_local.py --check` to inspect readiness later.
 
-The connected web app and its model inference run on the user's computer; internet is needed only for first-time dependency/model downloads or optional online-source imports. Local state and models are under `backend/.data/`. The native mobile app now includes optional NB-Whisper ASR, but real-phone download, microphone and inference checks remain. Conversation, lesson generation and Piper are not integrated on mobile. See [MOBILE_MODELS.md](MOBILE_MODELS.md) for the model/runtime assessment and [CONNECTED_APP.md](CONNECTED_APP.md) for the current web flow.
+The connected web app and its model inference run on the user's computer; internet is needed only for first-time dependency/model downloads or optional online-source imports. Local state and models are under `backend/.data/`. The native app now has optional NB-Whisper transcription and NB Borealis role-play. Real-phone downloads, microphone, model quality, latency and memory checks remain. Piper, lesson generation and media imports are not integrated on mobile. See [MOBILE_MODELS.md](MOBILE_MODELS.md) for the model/runtime assessment and [CONNECTED_APP.md](CONNECTED_APP.md) for the current web flow.
 
 ## Backend foundation (3 October 2026)
 

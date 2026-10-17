@@ -1,6 +1,6 @@
 # Norsk Rom mobile
 
-This Expo / React Native project is the starting point for the Android and iOS apps. Its **Lesson** tab provides a mobile version of the browser's six-step authored lesson. The role-play has an optional push-to-talk path for NB-Whisper Large q5_0 through whisper.cpp. Learners choose when to download its approximately 1.08 GB model; transcription runs on-device, and the recognized text remains editable before sending. On iOS, the model is stored in its own app-private folder and excluded from device backups. Lesson content and partner responses remain fictional/scripted.
+This Expo / React Native app brings the six-step lesson to Android and iOS. The role-play can use either scripted replies or an optional local NB Borealis 1B model. Borealis is an experimental 806 MB download; replies run on the phone. Optional push-to-talk uses NB-Whisper Large q5_0 (about 1.08 GB), with an editable transcript. Both models can be deleted, and the app releases one model before loading the other.
 
 ## Run on Android
 
@@ -21,13 +21,13 @@ For an Android phone later, enable Developer options and USB debugging, connect 
 
 On a Mac with the full Xcode app, its iOS platform components, and CocoaPods installed, run `npm ci` and `npm run ios`. Expo generates the ignored `ios/` project and installs native pods, including `whisper.rn`, `react-native-fs`, and the PCM microphone stream. The generated app requests microphone access with an on-device-use explanation and enables Apple's Extended Virtual Addressing entitlement, which `whisper.rn` recommends for Large models. Review signing in Xcode when prompted. The iOS project can be generated without Xcode using `npx expo prebuild --platform ios --no-install`, but compiling and launching it require Xcode.
 
-GitHub Actions also compiles an unsigned iOS Simulator build whenever mobile files change. This verifies the native iOS build without an iPhone or Apple signing account; physical-device audio and model performance still need a real phone.
+GitHub Actions compiles, installs and launches an unsigned iOS Simulator build whenever mobile files change. This verifies the native app build without an iPhone or Apple signing account; physical-device audio and model performance still need a real phone.
 
 ## Current limits
 
-- The six-step lesson and role-play replies are scripted. Push-to-talk speech input uses local NB-Whisper after the optional model download.
+- The authored lesson is fixed demo content. The optional Borealis partner generates replies locally; it is not guaranteed to understand every learner turn or provide accurate grammar feedback. Push-to-talk uses local NB-Whisper after the optional model download.
 - Listening examples are fictional and spoken by the device's Norwegian TTS voice when available. The lesson transcript follows playback line by line and words offer a small built-in offline hint list.
 - The grammar correction and phrase matching are narrow demo rules, not general Norwegian grammar or pronunciation assessment.
-- NB-Whisper uses a model build that is opt-in and downloaded from the pinned Nasjonalbiblioteket Hugging Face artifact. The downloader checks the published file size and Xet ETag, then verifies SHA-256 before installation. Android compiles and has passed an emulator launch check. iOS prebuild, permission configuration, model entitlement and native module autolinking have been checked, but an Xcode compile is still needed. Model download, microphone capture and transcription need end-to-end checks on real phones; this large model may exceed some phones' memory limits.
+- NB-Whisper and Borealis are opt-in downloads from pinned Nasjonalbiblioteket Hugging Face artifacts. Size and SHA-256 are checked before installation. Android has compiled and launched in an emulator; iOS simulator builds compile and launch in CI. On-device model download, inference, microphone capture, latency and memory use still need testing on real phones. Borealis is an experimental preview and uses the Gemma license; review its model card before redistributing it.
 - Phrasebook data is stored locally with AsyncStorage.
-- Borealis, Piper, imported media and generated lessons do not run in this app yet. See [`../MOBILE_MODELS.md`](../MOBILE_MODELS.md) for model details and device checks.
+- Piper speech synthesis, imported media and generated lessons do not run in this app yet. See [`../MOBILE_MODELS.md`](../MOBILE_MODELS.md) for model details and device checks.

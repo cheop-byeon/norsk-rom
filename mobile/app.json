@@ -11,7 +11,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "no.norskrom.app",
       "entitlements": {
-        "com.apple.developer.kernel.extended-virtual-addressing": true
+        "com.apple.developer.kernel.extended-virtual-addressing": true,
+        "com.apple.developer.kernel.increased-memory-limit": true
       }
     },
     "android": {
@@ -29,11 +30,32 @@
     },
     "plugins": [
       [
+        "llama.rn",
+        {
+          "enableEntitlements": true,
+          "entitlementsProfile": "production",
+          "forceCxx20": true,
+          "enableOpenCLAndHexagon": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.4"
+          },
+          "android": {
+            "minSdkVersion": 24
+          }
+        }
+      ],
+      [
         "expo-audio",
         {
           "microphonePermission": "Allow Norsk Rom to record a short Norwegian practice turn. Audio stays on this device."
         }
       ]
-    ]
+    ],
+    "newArchEnabled": true
   }
 }

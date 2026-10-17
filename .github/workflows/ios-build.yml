@@ -36,6 +36,7 @@ jobs:
       - run: npm test
       - run: npx expo lint
       - run: npx tsc --noEmit
+      - run: npx expo export --platform web --output-dir /tmp/norsk-rom-web-export
       - run: npx expo export --platform ios --output-dir /tmp/norsk-rom-ios-export
       - run: npx expo prebuild --platform ios --no-install
       - run: pod install --project-directory=ios

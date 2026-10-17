@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { connectedLesson, getEvidence, correctLessonText, replyToLesson, scoreLesson } from './connectedLesson.js';
 import { NB_WHISPER_MODEL, matchesPublishedNbModel } from './nbWhisperModel.js';
+import { BOREALIS_MODEL } from './borealisModel.js';
 
 test('lesson fixture contains a continuous six-line conversation and two questions', () => {
   assert.equal(connectedLesson.lines.length, 6);
@@ -36,4 +37,11 @@ test('mobile model download is pinned and validates published size and file iden
   assert.equal(matchesPublishedNbModel({ size: 1081140203, etag: 'different-file' }), false);
   assert.equal(matchesPublishedNbModel({ size: 1081140203, sha256: NB_WHISPER_MODEL.sha256.toUpperCase() }), true);
   assert.equal(matchesPublishedNbModel({ size: 1081140203, sha256: 'different-checksum' }), false);
+});
+
+test('Borealis mobile download is pinned to the published GGUF and checksum', () => {
+  assert.equal(BOREALIS_MODEL.sizeBytes, 806058816);
+  assert.equal(BOREALIS_MODEL.url.includes(BOREALIS_MODEL.revision), true);
+  assert.match(BOREALIS_MODEL.sha256, /^[a-f0-9]{64}$/);
+  assert.match(BOREALIS_MODEL.repository, /^NbAiLab\//);
 });

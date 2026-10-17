@@ -12,10 +12,19 @@ The q5_0 version is the first candidate because it retains NB-Whisper Large whil
 - The runtime accepts a local model path and transcribes audio locally. For push-to-talk, capture mono 16 kHz audio, pass Norwegian language code `no`, and release the native model context when leaving the speech feature.
 - Keep the model file in app-private storage. Download it only after the learner chooses to enable speech recognition; show progress, support retry/cancel, and verify the final file before loading it. No audio or transcript should be sent to Norsk Rom servers.
 - The Large model is optional because its 1.08 GB q5_0 download and runtime memory use may not suit every phone. Do not claim universal compatibility based on simulator success. Benchmark cold load, transcription time, peak memory, battery/heat and recognition errors on representative real iOS and Android phones.
-- `whisper.rn` only provides ASR. It does not add the Borealis conversation model, grammar coaching, pronunciation scoring or TTS. Those remain separate on-device integrations. Existing mobile role-play is still scripted, and pronunciation scoring remains unimplemented.
+- `whisper.rn` only provides ASR. The optional conversation model is integrated separately, and does not score pronunciation. The authored mobile lesson and grammar example remain demo content.
+
+## Optional local conversation partner
+
+The role-play can use Nasjonalbiblioteket's experimental Borealis 1B Instruct Preview Q4_K_M through [`llama.rn`](https://github.com/mybigday/llama.rn), a native `llama.cpp` binding for React Native. The model is about **806 MB**, pinned to revision `74ded66c3f23bed03588ffd303fef9a8550b4b8b`, and verified against SHA-256 `cd967c356007828923bbf11433296e34775088e63130f567066bcdbce2afdba3`. Its license is Gemma; read the model card and license terms before redistribution. The user must explicitly download and select it. The app releases Whisper before loading Borealis to avoid holding both models in memory.
+
+This is an integration milestone, not proof that every phone can run it well. Borealis is a preview model; generated Norwegian and inferred meanings can be wrong. Measure cold start, reply latency, peak memory, heat and battery on real devices. Do not present its responses as authoritative grammar correction.
 
 ## Candidate sources
 
+- [NB Borealis 1B Instruct Preview model card](https://huggingface.co/NbAiLab/borealis-1b-instruct-preview-gguf): GGUF instructions, quantization sizes and Gemma license.
+- [NB Borealis 1B Q4_K_M file history](https://huggingface.co/NbAiLab/borealis-1b-instruct-preview-gguf/commit/74ded66c3f23bed03588ffd303fef9a8550b4b8b): published SHA-256 and file size for the pinned artifact.
+- [`llama.rn` setup and usage](https://github.com/mybigday/llama.rn): native local llama.cpp inference for React Native.
 - [NB-Whisper Large model card](https://huggingface.co/NbAiLab/nb-whisper-large): model format, conversion guidance, license, attribution and model limitations.
 - [NB-Whisper Large q5_0 file](https://huggingface.co/NbAiLab/nb-whisper-large/blob/main/ggml-model-q5_0.bin): quantized artifact, currently listed as about 1.08 GB.
 - [NB-Whisper Large full ggml file](https://huggingface.co/NbAiLab/nb-whisper-large/blob/main/ggml-model.bin): full artifact, currently listed as about 3.1 GB.
@@ -24,7 +33,7 @@ The q5_0 version is the first candidate because it retains NB-Whisper Large whil
 
 ## Local build readiness
 
-`mobile/` now has a native `whisper.rn` integration, an opt-in download of the pinned q5_0 model, and push-to-talk capture through a PCM stream adapter. The Android debug app compiles and passed an emulator launch check. The learner must download the 1.08 GB model and grant microphone access; captured audio is processed in memory and not written to disk. The transcript is placed in an editable reply field and is never sent automatically. On iOS, Expo prebuild succeeds, the generated project includes the microphone explanation and Extended Virtual Addressing entitlement, and native module autolinking finds Whisper, PCM capture and filesystem pods. A GitHub Actions workflow is configured to compile an unsigned iOS Simulator build when mobile code changes. This machine has the Xcode command-line tools but not the full Xcode app or iOS SDK, so that build has not yet run. Model download, microphone capture and transcription still need an end-to-end run on real phones. Docker/Kubernetes cannot replace device runtimes, and real phones are still required for meaningful model performance results.
+`mobile/` supports opt-in NB-Whisper q5_0 transcription and opt-in Borealis 1B replies through native React Native runtimes. Both downloads are pinned and SHA-256 checked; the models live in app-private storage. Android compiled and launched in an Android 37 emulator. The iOS simulator workflow previously compiled and launched the app; the current llama.rn integration still needs its CI run. No model was downloaded or run during these build checks. Real-phone download, offline inference, microphone use, latency, memory, battery and heat remain to be tested. A simulator cannot establish real-device model performance.
 
 ## Acceptance checks for the implementation
 
@@ -32,4 +41,5 @@ The q5_0 version is the first candidate because it retains NB-Whisper Large whil
 2. Download q5_0 on demand, validate it, transcribe a short Norwegian sample with `language: 'no'`, cancel a recording, and release the model cleanly.
 3. Compare transcript quality with the desktop NB-Whisper Large result using the same learner recordings, including non-native speech and more than one Norwegian spoken variety.
 4. Record model download size, peak RAM, cold-start time, real-time factor, heat/battery impact and error cases. Set a minimum-device recommendation from these results.
-5. Keep AI conversation, generated exercises and TTS visibly unavailable on mobile until each has its own local runtime and passes the same offline test.
+5. Test Borealis and Whisper separately on a real Android phone, then repeat on an iPhone when one is available. Confirm each works offline after model installation and record cold start, latency, peak memory, heat, battery and recognition or response errors.
+6. Add Piper TTS, media imports and lesson generation only after each has a suitable local mobile runtime and passes an offline test.
