@@ -184,13 +184,6 @@ function renderStudio(root){
    ['subtitles','💬','Subtitle file','Add SRT/VTT captions you can access.'],
    ['text','📝','Paste text','Use a transcript or captions as a listening script.']
   ]],
-  ['Norwegian media',[
-   ['nrk','📻','NRK','Try public programme pages or audio.'],
-   ['tv2','TV','TV 2','Try public news pages or directly accessible media.'],
-   ['aftenposten','AP','Aftenposten','Try public articles and podcast pages.'],
-   ['vg','VG','VG','Try public news and podcast pages.'],
-   ['dagbladet','DB','Dagbladet','Try public news and podcast pages.']
-  ]],
   ['Podcasts & audio',[
    ['podcast','🎧','Podcast RSS','Browse public podcast episodes.'],
    ['public_audio','🎙️','Podcast / audio URL','Paste a public episode or audio link.'],
@@ -215,6 +208,22 @@ function renderStudio(root){
   group.append(pickerGrid);picker.append(group);
  }
  card.append(picker);
+ const publisherGroup=E('section',undefined,'source-group publisher-group');
+ publisherGroup.setAttribute('aria-label','Norwegian publishers');
+ publisherGroup.append(E('h4','Norwegian publishers · open at source','source-group-title'));
+ publisherGroup.append(E('p','Browse these publishers on their own sites. Norsk Rom does not import their hosted articles or audio. You can import a local file you are authorized to use.','notice'));
+ const publisherGrid=E('div',undefined,'source-picker');
+ for(const [id,icon,title,description,url] of [
+  ['nrk','📻','NRK','Browse NRK Radio and podcasts.','https://radio.nrk.no/podkast'],
+  ['tv2','TV','TV 2','Open the TV 2 site.','https://www.tv2.no/'],
+  ['aftenposten','AP','Aftenposten','Browse Aftenposten and its podcasts.','https://www.aftenposten.no/podkast'],
+  ['vg','VG','VG','Open the VG site.','https://www.vg.no/'],
+  ['dagbladet','DB','Dagbladet','Open the Dagbladet site.','https://www.dagbladet.no/']
+ ]){
+  const link=E('a',undefined,'source-option publisher-link');link.href=url;link.target='_blank';link.rel='noopener noreferrer';
+  link.append(sourceLogo(id,icon),E('strong',title),E('small',description));publisherGrid.append(link);
+ }
+ publisherGroup.append(publisherGrid);card.append(publisherGroup);
 
  if(['file','subtitles'].includes(studioImportSource)){
   card.append(step(2,studioImportSource==='subtitles'?'Choose a subtitle file':'Record, upload, or open a document'));
@@ -229,10 +238,10 @@ function renderStudio(root){
   if(studioRecording)card.append(E('p','Recording locally in this tab · maximum 90 seconds. Select Stop recording when finished.','notice'));
   else if(studioFile?.name==='norsk-rom-microphone.webm')card.append(E('p','Microphone clip ready. Listen to it, choose a segment, then make the transcript.','notice'));
  }
- if(['youtube','nrk','tv2','aftenposten','vg','dagbladet','podimo','public_audio','podcast','social','instagram','tiktok'].includes(studioImportSource)){
-  const sourceNames={nrk:'NRK',tv2:'TV 2',aftenposten:'Aftenposten',vg:'VG',dagbladet:'Dagbladet',podimo:'Podimo',instagram:'Instagram',tiktok:'TikTok'};
+ if(['youtube','podimo','public_audio','podcast','social','instagram','tiktok'].includes(studioImportSource)){
+  const sourceNames={podimo:'Podimo',instagram:'Instagram',tiktok:'TikTok'};
   card.append(step(2,studioImportSource==='youtube'?'Add your YouTube link':studioImportSource==='podcast'?'Add a podcast RSS feed':studioImportSource==='social'?'Add another public social link':sourceNames[studioImportSource]?`Add a link from ${sourceNames[studioImportSource]}`: 'Add a public podcast or audio link'));
-  const urlInput=E('input');urlInput.type='url';urlInput.placeholder=studioImportSource==='youtube'?'Paste YouTube URL here':studioImportSource==='nrk'?'Paste an NRK programme or article URL':studioImportSource==='tv2'?'Paste a public TV 2 article or media URL':studioImportSource==='aftenposten'?'Paste a public Aftenposten article or podcast URL':studioImportSource==='vg'?'Paste a public VG article or podcast URL':studioImportSource==='dagbladet'?'Paste a public Dagbladet article or podcast URL':studioImportSource==='podimo'?'Paste a public Podimo episode page URL':studioImportSource==='podcast'?'Paste a podcast RSS or Atom feed URL':studioImportSource==='instagram'?'Paste a public Instagram post URL':studioImportSource==='tiktok'?'Paste a public TikTok video URL':studioImportSource==='social'?'Paste a public X/Twitter URL':'Paste a public episode page or direct audio URL';urlInput.value=studioSourceURL;urlInput.autocomplete='url';urlInput.setAttribute('aria-label',studioImportSource==='podcast'?'Podcast feed URL':'Source URL');urlInput.oninput=()=>{studioSourceURL=urlInput.value;};card.append(urlInput);
+  const urlInput=E('input');urlInput.type='url';urlInput.placeholder=studioImportSource==='youtube'?'Paste YouTube URL here':studioImportSource==='podimo'?'Paste a public Podimo episode page URL':studioImportSource==='podcast'?'Paste a podcast RSS or Atom feed URL':studioImportSource==='instagram'?'Paste a public Instagram post URL':studioImportSource==='tiktok'?'Paste a public TikTok video URL':studioImportSource==='social'?'Paste a public X/Twitter URL':'Paste a public episode page or direct audio URL';urlInput.value=studioSourceURL;urlInput.autocomplete='url';urlInput.setAttribute('aria-label',studioImportSource==='podcast'?'Podcast feed URL':'Source URL');urlInput.oninput=()=>{studioSourceURL=urlInput.value;};card.append(urlInput);
   if(studioImportSource==='podcast'){card.append(B('Try the Norskpodden learner feed',()=>{studioSourceURL='https://feeds.captivate.fm/norskpodden/';urlInput.value=studioSourceURL;},'chip'));const links=E('p',undefined,'notice');for(const [label,href] of [['Browse NRK Radio','https://radio.nrk.no/podkast'],['Browse Aftenposten podcasts','https://www.aftenposten.no/podkast']]){const link=E('a',label);link.href=href;link.target='_blank';link.rel='noopener noreferrer';links.append(link,E('span',' · '));}links.append(E('span','Norskpodden is a learner-focused feed; the other catalogues offer authentic Norwegian listening.'));card.append(links);}
   const importLabel=studioImportSource==='youtube'?'Load YouTube video':studioImportSource==='podcast'?'Load podcast episodes':studioImportSource==='instagram'?'Try public Instagram post':studioImportSource==='tiktok'?'Try public TikTok video':studioImportSource==='social'?'Try public post':sourceNames[studioImportSource]?`Import ${sourceNames[studioImportSource]}`:'Import podcast / audio';
   card.append(B(importLabel,()=>run(async()=>{
@@ -240,8 +249,6 @@ function renderStudio(root){
    const youtubeVideoId=youtubeId(studioSourceURL.trim());
    if(studioImportSource==='youtube'&&!youtubeVideoId)throw new Error('Paste a valid YouTube video link.');
    if(studioImportSource!=='youtube'&&youtubeVideoId)throw new Error('Choose the YouTube source option for YouTube links.');
-   if(studioImportSource==='nrk'){let host='';try{host=new URL(studioSourceURL.trim()).hostname.toLowerCase();}catch{}if(host!=='nrk.no'&&!host.endsWith('.nrk.no'))throw new Error('That link is not on nrk.no. Choose “Podcast / public audio” for a public episode or direct audio link.');}
-   for(const [source,allowed,label] of [['tv2',['tv2.no'],'TV 2'],['aftenposten',['aftenposten.no'],'Aftenposten'],['vg',['vg.no'],'VG'],['dagbladet',['dagbladet.no'],'Dagbladet']])if(studioImportSource===source){let host='';try{host=new URL(studioSourceURL.trim()).hostname.toLowerCase().replace(/^www\./,'');}catch{}if(!allowed.some(domain=>host===domain||host.endsWith('.'+domain)))throw new Error(`Paste a public ${label} link.`);}
    if(studioImportSource==='podimo'){let host='';try{host=new URL(studioSourceURL.trim()).hostname.toLowerCase();}catch{}if(host!=='podimo.com'&&!host.endsWith('.podimo.com'))throw new Error('Paste a link from podimo.com. For a publisher’s public RSS feed, choose “Podcast RSS feed” instead.');}
    for(const [source,hosts,label] of [['instagram',['instagram.com'],'Instagram'],['tiktok',['tiktok.com','vm.tiktok.com'],'TikTok'],['social',['x.com','twitter.com'],'X/Twitter']])if(studioImportSource===source){let host='';try{host=new URL(studioSourceURL.trim()).hostname.toLowerCase().replace(/^www\./,'');}catch{}if(!hosts.some(allowed=>host===allowed||host.endsWith('.'+allowed)))throw new Error(`Paste a public ${label} link.`);}
    if(youtubeVideoId){stopAudio();studioYoutubeId=youtubeVideoId;studioYoutubeStart=0;studioYoutubeEnd=20;studioFile=null;if(studioURL)URL.revokeObjectURL(studioURL);studioURL=null;studioText='';studioKind='audio transcript';studioRequest=null;return;}
@@ -255,13 +262,11 @@ function renderStudio(root){
     studioFile=new File([result],name,{type:result.type||'application/octet-stream'});studioURL=URL.createObjectURL(studioFile);studioStart=0;studioEnd=20;studioText='';studioKind='audio transcript';
    }else{studioText=result.text||'';studioKind='text';studioFile=null;studioYoutubeId='';if(studioURL)URL.revokeObjectURL(studioURL);studioURL=null;}
    studioRequest=null;
-  },studioImportSource==='nrk'?'Importing NRK source…':studioImportSource==='podimo'?'Loading public Podimo page…':studioImportSource==='public_audio'?'Importing public audio…':studioImportSource==='instagram'?'Trying public Instagram content…':studioImportSource==='tiktok'?'Trying public TikTok content…':'Loading source…'),'primary dark'));
-  const mediaSources=['tv2','aftenposten','vg','dagbladet'];
-  const sourceNotice=E('p',studioImportSource==='youtube'?'The video appears below. Norsk Rom uses available Norwegian captions and does not download YouTube audio.':studioImportSource==='nrk'?'NRK pages vary. Norsk Rom tries public text or directly accessible media; it cannot sign in or bypass DRM.':mediaSources.includes(studioImportSource)?'Norsk Rom can import readable public page text or a directly accessible media file. A page may provide only an article or description; sign-in, paid streams, and DRM-protected audio are not accessed.':studioImportSource==='podimo'?'This imports only text visible on a public Podimo page; it may be a description, not an episode transcript. Norsk Rom does not sign in, extract subscriber audio, or use offline downloads. Try a publisher’s public RSS feed or a transcript/media file you are allowed to use.':(['instagram','tiktok','social'].includes(studioImportSource)?'Only public page text is attempted. Sign-in or platform restrictions may block imports; use an audio file, captions, or RSS feed you are allowed to process if this fails.':' '), 'notice');
-  if(mediaSources.includes(studioImportSource)){const browse={tv2:['Open TV 2','https://www.tv2.no/'],aftenposten:['Open Aftenposten','https://www.aftenposten.no/'],vg:['Open VG','https://www.vg.no/'],dagbladet:['Open Dagbladet','https://www.dagbladet.no/']}[studioImportSource];sourceNotice.append(document.createTextNode(' '));const link=E('a',browse[0]);link.href=browse[1];link.target='_blank';link.rel='noopener noreferrer';sourceNotice.append(link);}
+  },studioImportSource==='podimo'?'Loading public Podimo page…':studioImportSource==='public_audio'?'Importing public audio…':studioImportSource==='instagram'?'Trying public Instagram content…':studioImportSource==='tiktok'?'Trying public TikTok content…':'Loading source…'),'primary dark'));
+  const sourceNotice=E('p',studioImportSource==='youtube'?'The video appears below. Norsk Rom uses available Norwegian captions and does not download YouTube audio.':studioImportSource==='podimo'?'This imports only text visible on a public Podimo page; it may be a description, not an episode transcript. Norsk Rom does not sign in, extract subscriber audio, or use offline downloads. Try a transcript or media file you are authorized to use.':(['instagram','tiktok','social'].includes(studioImportSource)?'Only public page text is attempted. Sign-in or platform restrictions may block imports; use an audio file, captions, or RSS feed you are authorized to process if this fails.':' '), 'notice');
   if(studioImportSource==='podimo'){sourceNotice.append(document.createTextNode(' '));const browse=E('a','Browse Podimo shows');browse.href='https://podimo.com/no/shows';browse.target='_blank';browse.rel='noopener noreferrer';sourceNotice.append(browse,document.createTextNode(' · Read '));const terms=E('a','Podimo’s terms');terms.href='https://podimo.com/no/terms-of-use';terms.target='_blank';terms.rel='noopener noreferrer';sourceNotice.append(terms,document.createTextNode(' for its content-use rules.'));}
-  if(['podimo','instagram','tiktok','social',...mediaSources].includes(studioImportSource))card.append(sourceNotice);
-  else card.append(E('p',studioImportSource==='podcast'?'RSS/Atom feeds expose episode metadata and public audio enclosures. A subscription-only or private feed may not be accessible. Norsk Rom does not retain the feed or episode.':'Use an openly accessible episode page or direct audio file up to 50 MB. Sign-in, subscription-only, and DRM-protected sources are not imported.','notice'));
+  if(['podimo','instagram','tiktok','social'].includes(studioImportSource))card.append(sourceNotice);
+  else card.append(E('p',studioImportSource==='podcast'?'Only import feeds and episodes you are authorized to download and process. Publicly reachable does not automatically mean licensed for reuse; Norsk Rom does not retain the feed or episode.':'Use an openly accessible episode page or direct audio file up to 50 MB that you are authorized to use. Sign-in, subscription-only, and DRM-protected sources are not imported.','notice'));
  }
  if(studioImportSource==='podcast'&&studioPodcastEpisodes.length){card.append(E('h3',`Episodes · ${studioEpisodeTitle}`,'studio-step-title'));for(const episode of studioPodcastEpisodes){const row=E('div',undefined,'phrase'),copy=E('div');copy.append(E('strong',episode.title),E('small',episode.published||'Podcast episode'));if(episode.description)copy.append(E('small',episode.description));row.append(copy,B('Use this episode',()=>run(async()=>{const result=await api.request('/studio/import-url',{method:'POST',body:{url:episode.audio_url},timeoutMs:120000});if(!(result instanceof Blob))throw new Error('This feed item does not link to a downloadable audio file.');const safeName=(episode.title||'podcast-episode').replace(/[^\p{L}\p{N}-]+/gu,'-').slice(0,80)+'.mp3';studioFile=new File([result],safeName,{type:result.type||'audio/mpeg'});if(studioURL)URL.revokeObjectURL(studioURL);studioURL=URL.createObjectURL(studioFile);studioStart=0;studioEnd=20;studioText='';studioKind='audio transcript';studioSourceSegments=[];},'Loading the selected podcast episode…'),'primary'));card.append(row);}}
  if(studioImportSource==='text')card.append(step(2,'Paste your Norwegian text or transcript'));

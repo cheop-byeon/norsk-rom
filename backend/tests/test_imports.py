@@ -2,7 +2,7 @@ import io
 import zipfile
 import pytest
 
-from norsk_api.imports import _extract_text, _public_http_url, import_podimo_page, import_podcast_feed, extract_document
+from norsk_api.imports import _extract_text, _public_http_url, import_url, import_podimo_page, import_podcast_feed, extract_document
 
 
 def test_extract_article_paragraphs_and_title():
@@ -18,6 +18,40 @@ def test_reject_private_and_non_http_urls():
     for url in ('http://127.0.0.1/audio.mp3', 'http://localhost/page', 'file:///etc/passwd', 'https://user:pass@example.org'):
         with pytest.raises(ValueError, match='public http or https'):
             _public_http_url(url)
+
+
+@pytest.mark.parametrize('domain', ['nrk.no', 'tv2.no', 'aftenposten.no', 'vg.no', 'dagbladet.no'])
+def test_direct_norwegian_publisher_import_is_blocked(domain):
+    from norsk_api.imports import PUBLISHER_IMPORT_NOTICE
+    with pytest.raises(ValueError, match='does not import content hosted') as exc:
+        import_url(f'https://www.{domain}/some-article')
+    assert str(exc.value) == PUBLISHER_IMPORT_NOTICE
+
+
+def test_norwegian_publisher_rss_feed_is_blocked_before_network():
+    with pytest.raises(ValueError, match='does not import content hosted'):
+        import_podcast_feed('https://podkast.nrk.no/some-program.rss')
+
+
+def test_podcast_feed_skips_norwegian_publisher_audio_enclosures(monkeypatch):
+    payload=b'''<rss version="2.0"><channel><title>News podcast</title>
+      <item><title>News episode</title><enclosure url="https://podkast.nrk.no/episode.mp3" type="audio/mpeg"/></item>
+      </channel></rss>'''
+    class Response:
+        status_code=200;headers={}
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def iter_bytes(self):yield payload
+        def raise_for_status(self):pass
+    class Client:
+        def __init__(self,**kwargs):pass
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def stream(self,*args,**kwargs):return Response()
+    monkeypatch.setattr('norsk_api.imports._public_http_url',lambda url:url)
+    monkeypatch.setattr('norsk_api.imports.httpx.Client',Client)
+    with pytest.raises(ValueError,match='does not import content hosted'):
+        import_podcast_feed('https://independent-podcast.example/feed.xml')
 
 
 def test_podcast_feed_reads_public_audio_enclosures_without_downloading_them(monkeypatch):

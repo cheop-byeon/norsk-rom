@@ -87,3 +87,4 @@ input,textarea,select,.roleplay-composer textarea{border-radius:16px!important;b
 .sound-settings{border-radius:18px;background:linear-gradient(145deg,#fffefa,#edf5f0);box-shadow:0 4px 0 #d5e5dd}
 footer{box-shadow:0 -6px 18px #244b3c0b}
 @media(max-width:700px){.welcome-banner{min-height:148px;padding:16px 14px;gap:7px}.welcome-banner .mascot{flex-basis:114px;width:114px;height:126px;margin-left:-8px}.welcome-banner h2{font-size:19px;max-width:245px}.welcome-banner p{font-size:12px;max-width:235px}.card,.karaoke-card,.word-flashcard,.dictation-card{border-radius:22px}.lesson-step{flex:0 0 auto}.top{align-items:flex-start}}
+.publisher-link{text-decoration:none}.publisher-link:hover{border-color:#75a995}.publisher-group>.notice{margin:0 0 12px}

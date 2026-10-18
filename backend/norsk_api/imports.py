@@ -21,6 +21,13 @@ MEDIA_EXTENSIONS = {
     '.mp4': 'video/mp4', '.webm': 'video/webm', '.mov': 'video/quicktime',
     '.mkv': 'video/x-matroska',
 }
+NORWEGIAN_PUBLISHER_DOMAINS = (
+    'nrk.no', 'tv2.no', 'aftenposten.no', 'vg.no', 'dagbladet.no',
+)
+PUBLISHER_IMPORT_NOTICE = (
+    'Norsk Rom does not import content hosted by these Norwegian publishers. '
+    'Open the publisher’s site, or import a local copy you are authorized to use.'
+)
 
 
 class _ArticleText(HTMLParser):
@@ -82,6 +89,17 @@ def _public_http_url(url: str) -> str:
         raise ValueError('Enter a public http or https URL. Local network addresses are not allowed.')
 
 
+def _is_norwegian_publisher_url(url: str) -> bool:
+    host = (urlsplit(url).hostname or '').rstrip('.').lower()
+    return any(host == domain or host.endswith('.' + domain)
+               for domain in NORWEGIAN_PUBLISHER_DOMAINS)
+
+
+def _reject_unlicensed_publisher_url(url: str) -> None:
+    if _is_norwegian_publisher_url(url):
+        raise ValueError(PUBLISHER_IMPORT_NOTICE)
+
+
 def _extract_text(data: bytes, content_type: str, url: str) -> tuple[str, str]:
     text = data.decode('utf-8-sig', errors='replace')
     if 'html' in content_type or text.lstrip().lower().startswith(('<!doctype html', '<html')):
@@ -99,11 +117,14 @@ def _extract_text(data: bytes, content_type: str, url: str) -> tuple[str, str]:
 
 def import_url(url: str) -> dict:
     """Fetch a public text page or directly downloadable short media file."""
+    _reject_unlicensed_publisher_url(url)
     current = _public_http_url(url)
+    _reject_unlicensed_publisher_url(current)
     with httpx.Client(timeout=httpx.Timeout(25, connect=8), follow_redirects=False,
                       headers={'User-Agent': 'NorskRom/0.1 (personal language-learning app)'}) as client:
         for redirect_count in range(4):
             current = _public_http_url(current)
+            _reject_unlicensed_publisher_url(current)
             with client.stream('GET', current) as response:
                 if response.status_code in {301, 302, 303, 307, 308}:
                     location = response.headers.get('location')
@@ -183,11 +204,14 @@ def import_podimo_page(url: str) -> dict:
 
 def import_podcast_feed(url: str) -> dict:
     """Read a public RSS/Atom feed's audio enclosure metadata, without downloading episodes."""
+    _reject_unlicensed_publisher_url(url)
     current = _public_http_url(url)
+    _reject_unlicensed_publisher_url(current)
     with httpx.Client(timeout=httpx.Timeout(20, connect=8), follow_redirects=False,
                       headers={'User-Agent': 'NorskRom/0.1 (personal language-learning app)'}) as client:
         for redirect_count in range(4):
             current = _public_http_url(current)
+            _reject_unlicensed_publisher_url(current)
             with client.stream('GET', current) as response:
                 if response.status_code in {301,302,303,307,308}:
                     location=response.headers.get('location')
@@ -208,7 +232,7 @@ def import_podcast_feed(url: str) -> dict:
             if local(node) in names and node.text and node.text.strip():return ' '.join(node.text.split())
         return ''
     feed_title=child_text(root,{'title'}) or 'Podcast feed'
-    episodes=[];seen=set()
+    episodes=[];seen=set();blocked_publisher_audio=False
     entries=[node for node in root.iter() if local(node) in {'item','entry'}]
     for entry in entries:
         title=child_text(entry,{'title'})
@@ -222,6 +246,9 @@ def import_podcast_feed(url: str) -> dict:
         audio_url=urljoin(current,audio_url)
         try:audio_url=_public_http_url(audio_url)
         except ValueError:continue
+        if _is_norwegian_publisher_url(audio_url):
+            blocked_publisher_audio=True
+            continue
         ext=urlsplit(audio_url).path.lower().rsplit('.',1)
         audio_like=mime.startswith('audio/') or (len(ext)==2 and f".{ext[-1]}" in MEDIA_EXTENSIONS)
         if not audio_like or audio_url in seen:continue
@@ -231,6 +258,7 @@ def import_podcast_feed(url: str) -> dict:
         published=child_text(entry,{'pubdate','published','updated'})[:80]
         episodes.append({'title':title[:180],'audio_url':audio_url,'description':description,'published':published})
         if len(episodes)>=50:break
+    if not episodes and blocked_publisher_audio:raise ValueError(PUBLISHER_IMPORT_NOTICE)
     if not episodes:raise ValueError('No public audio episodes were found in that feed.')
     return {'title':feed_title[:180],'episodes':episodes,'feed_url':current}
 
