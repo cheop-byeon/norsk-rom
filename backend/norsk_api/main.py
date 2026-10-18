@@ -399,8 +399,8 @@ def create_app(settings: Settings | None = None, conversation=None):
         data=bytearray()
         async for chunk in request.stream():
             data.extend(chunk)
-            if len(data)>12*1024*1024:
-                raise HTTPException(413,'Audio must be smaller than 12 MB; select a shorter clip.')
+            if len(data)>50*1024*1024:
+                raise HTTPException(413,'Audio must be smaller than 50 MB; select a shorter recording.')
         if not data:
             raise HTTPException(422,'Send audio bytes in the request body.')
         try:

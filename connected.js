@@ -224,7 +224,7 @@ function renderStudio(root){
    else{studioFile=file;studioKind='audio transcript';studioURL=URL.createObjectURL(file);studioStart=0;studioEnd=20;render();}
   };card.append(picker);
   card.append(B(studioRecording?'■ Stop recording':'🎙 Record a clip with my microphone',recordStudioClip,'chip'));
-  if(!studioFile&&!studioText)card.append(E('p',studioImportSource==='subtitles'?'Choose a Norwegian SRT or VTT subtitle file up to 25 MB. You can use captions that are available to you from a streaming service.':'Choose audio/video up to 12 MB, or a TXT, Markdown, SRT/VTT, PDF, EPUB, or DOCX document up to 25 MB. You can also record a clip here.','notice'));
+  if(!studioFile&&!studioText)card.append(E('p',studioImportSource==='subtitles'?'Choose a Norwegian SRT or VTT subtitle file up to 25 MB. You can use captions that are available to you from a streaming service.':'Choose audio/video up to 50 MB, or a TXT, Markdown, SRT/VTT, PDF, EPUB, or DOCX document up to 25 MB. You can also record a clip here.','notice'));
   if(studioText&&studioKind==='text')card.append(E('p',studioTextTruncated?'Document text is longer than the current lesson limit. The first 4,000 characters are loaded for review.':'Document text is ready for review below. Scanned-image OCR is not enabled; PDFs need selectable text.','notice'));
   if(studioRecording)card.append(E('p','Recording locally in this tab · maximum 90 seconds. Select Stop recording when finished.','notice'));
   else if(studioFile?.name==='norsk-rom-microphone.webm')card.append(E('p','Microphone clip ready. Listen to it, choose a segment, then make the transcript.','notice'));
@@ -309,7 +309,7 @@ function renderStudio(root){
    card.append(choices);
   }
   card.append(B('Make transcript',()=>run(async()=>{
-   if(studioFile.size>12*1024*1024)throw new Error('Use a file smaller than 12 MB.');
+   if(studioFile.size>50*1024*1024)throw new Error('Use an audio file smaller than 50 MB.');
    if(!Number.isFinite(studioStart)||!Number.isFinite(studioEnd)||studioEnd-studioStart<0.25||studioEnd-studioStart>90)throw new Error('Choose a range from 0.25 to 90 seconds.');
    const result=await api.request(`/speech/transcribe?start=${studioStart}&end=${studioEnd}`,{method:'POST',body:studioFile,raw:true,timeoutMs:600000});studioText=result.text;studioSourceSegments=(result.segments||[]).map(segment=>({...segment,timestamp_quality:'local_chunk'}));studioKind='audio transcript';studioRequest=null;
   },'Transcribing your clip locally…'),'primary dark'));

@@ -134,6 +134,15 @@ def test_generated_lesson_can_store_private_full_source_transcript(client,monkey
     assert c.put(f'/v1/lessons/{lid}/source-transcript',json={'segments':[{**segments[0],'end':0}]}).status_code==422
 
 
+def test_transcribe_accepts_full_recording_larger_than_12mb(client,monkeypatch):
+    c,app=client
+    monkeypatch.setattr(app.state.speech,'transcribe',lambda data,start,end:{'text':'NRK-klipp','segments':[],'bytes':len(data)})
+    payload=b'a'*(12*1024*1024+1)
+    response=c.post('/v1/speech/transcribe?start=0&end=90',content=payload)
+    assert response.status_code==200,response.text
+    assert response.json()['bytes']==len(payload)
+
+
 def test_generated_lesson_can_keep_and_replay_original_source_audio(client,monkeypatch):
     c,app=client
     monkeypatch.setattr('norsk_api.main.generate_lesson',lambda *args:{**deepcopy(LESSON),'generated':True})
